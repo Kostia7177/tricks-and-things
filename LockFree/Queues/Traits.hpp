@@ -2,7 +2,7 @@
 
 #include "../Tools/DefaultAllocatingStorage.hpp"
 #include "../Tools/InfoCalls.hpp"
-#include "../../NullType.hpp"
+#include "../../Tools/NullType.hpp"
 
 namespace TricksAndThings
 {

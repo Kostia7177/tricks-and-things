@@ -77,7 +77,8 @@
 //   const char *text = buffer.get<anyTExtField>();
 //
 
-#include "Tools.hpp"
+#include "../Tools/Int2Type.hpp"
+#include "../Tools/OneTwo.hpp"
 #include <cstddef>
 #include<algorithm>
 #include<string.h>

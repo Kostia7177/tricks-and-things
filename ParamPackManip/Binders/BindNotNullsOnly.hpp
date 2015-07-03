@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Tools.hpp"
+#include "../../Tools/NullType.hpp"
 #include "Bases.hpp"
 
 namespace ProtoTransformer

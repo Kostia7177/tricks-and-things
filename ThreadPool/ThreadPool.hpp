@@ -82,7 +82,7 @@ class ThreadPool
     size_t size() const { return workers.size(); }
 
     void wait(size_t threshold = 0)
-    { manager.template wait<typename Worker::WorktimeStrategies>(threshold); }
+    { manager.wait(threshold); }
 
     void clearStatistics()
     { applyOnWorkers(&Worker::clearStatistics); }

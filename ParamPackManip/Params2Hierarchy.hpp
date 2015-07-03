@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Tools.hpp"
+#include "../Tools/Int2Type.hpp"
 #include "Hierarchy2Params.hpp"
 
 namespace ProtoTransformer

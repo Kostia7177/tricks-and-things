@@ -10,14 +10,10 @@ void Manager<TaskQueue>::workerStopped(const Worker &worker)
 }
 
 template<class TaskQueue>
-template<class WorktimeStrategies>
 void Manager<TaskQueue>::wait(size_t threshold)
 {
     std::unique_lock<std::mutex> locker(lock);
-    while (WorktimeStrategies::continueAwaiting(numOfWorkersAwaiting.load(),
-                                                numOfWorkers,
-                                                queue.size(),
-                                                threshold))
+    while ((numOfWorkers - numOfWorkersAwaiting.load() + queue.size()) > threshold)
     {
         check.wait(locker);
     }

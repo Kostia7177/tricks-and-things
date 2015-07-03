@@ -32,7 +32,6 @@ class Manager
     size_t onNewWorker()
     { return numOfWorkers ++ ; }
 
-    template<class WorktimeStrategies>
     void wait(size_t threshold);
 };
 

@@ -15,8 +15,9 @@ Worker<TaskQueue, ShutdownPolicy, Statistics>::Worker(
                 typename TaskQueue::Type taskPtr;
                 do
                 {
-                    if (WorktimeStrategies::taskIsAppliable(taskPtr.get(),
-                                                            !workCompleted))
+                    if (WorktimeStrategies
+                        ::taskIsAppliable(taskPtr.get(),
+                                          !workCompleted))
                     {
                         statistics.store(queuePtr);
                         taskPtr->doIt();
