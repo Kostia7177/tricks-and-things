@@ -74,7 +74,10 @@ template<typename T, class Cfg>
 template<size_t idx>
 void GeneralPurpose<T, Cfg>::clear()
 {
-    for (Page *page = notepad[idx].template getRaw<mem::relaxed>();
+    Page *page = notepad[idx].template getRaw<mem::relaxed>();
+    if (!page) { return; }
+
+    for (;
          page;
          page = page->tail[idx].template getRaw<mem::relaxed>())
     {
