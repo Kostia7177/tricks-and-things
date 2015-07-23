@@ -24,7 +24,6 @@
 #include "../LockFree/Tools/InfoCalls.hpp"
 #include "../LockFree/Queues/Traits.hpp"
 #include "../LockFree/Queues/FewToLot.hpp"
-#include "ShutdownStrategies.hpp"
 #include "detail/Manager.hpp"
 #include "detail/Worker.hpp"
 #include "detail/Statistics.hpp"
@@ -40,7 +39,7 @@ template<class T> using Queue = LockFree::Queues::FewToLot<T,
 }
 
 template<template<class> class Q = detail::Queue,
-         class ShutdownPolicy = GracefulShutdown,
+         ShutdownStrategies shutdownPolicy = gracefulShutdown,
          class Statistics = detail::NullStatistics>
 class ThreadPool
 {
@@ -64,7 +63,7 @@ class ThreadPool
 
     detail::Manager<TaskQueue> manager;
 
-    typedef detail::Worker<TaskQueue, ShutdownPolicy, Statistics> Worker;
+    typedef detail::Worker<TaskQueue, shutdownPolicy, Statistics> Worker;
     typedef std::unique_ptr<Worker> WorkerPtr;
     std::vector<WorkerPtr> workers;
 

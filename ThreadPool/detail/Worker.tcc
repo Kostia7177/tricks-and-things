@@ -1,9 +1,9 @@
 
 namespace TricksAndThings { namespace detail {
 
-template<class TaskQueue, class ShutdownPolicy, class Statistics>
+template<class TaskQueue, ShutdownStrategies shutdownPolicy, class Statistics>
 template<class Manager>
-Worker<TaskQueue, ShutdownPolicy, Statistics>::Worker(
+Worker<TaskQueue, shutdownPolicy, Statistics>::Worker(
     TaskQueue &tasks,
     Manager &manager)
     : idle(tasks),
@@ -16,8 +16,8 @@ Worker<TaskQueue, ShutdownPolicy, Statistics>::Worker(
                 do
                 {
                     if (WorktimeStrategies
-                        ::taskIsAppliable(taskPtr.get(),
-                                          !workCompleted))
+                        ::taskIsAppliable(!workCompleted)
+                        && taskPtr.get())
                     {
                         statistics.store(queuePtr);
                         taskPtr->doIt();
@@ -36,20 +36,20 @@ Worker<TaskQueue, ShutdownPolicy, Statistics>::Worker(
                         manager.workerResumed(*this);
                     }
                 }
-                while (WorktimeStrategies::goOn(taskPtr.get(),
-                                                !workCompleted));
+                while (WorktimeStrategies
+                       ::goOn(taskPtr.get(), !workCompleted));
              })
 {
 }
 
-template<class TaskQueue, class ShutdownPolicy, class Statistics>
-Worker<TaskQueue, ShutdownPolicy, Statistics>::~Worker()
+template<class TaskQueue, ShutdownStrategies shutdownPolicy, class Statistics>
+Worker<TaskQueue, shutdownPolicy, Statistics>::~Worker()
 {
     if (thread.joinable()) { thread.join(); }
 }
 
-template<class TaskQueue, class ShutdownPolicy, class Statistics>
-void Worker<TaskQueue, ShutdownPolicy, Statistics>::completeWork()
+template<class TaskQueue, ShutdownStrategies shutdownPolicy, class Statistics>
+void Worker<TaskQueue, shutdownPolicy, Statistics>::completeWork()
 {
     workCompleted = true;
     idle.kick();
