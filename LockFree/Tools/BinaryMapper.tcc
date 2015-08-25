@@ -26,13 +26,13 @@ namespace TricksAndThings { namespace LockFree {
 template<class BitMap, class Condition>
 BitMap BinaryMapper<BitMap, Condition>::int2ShiftedBit(size_t num)
 {
-    if (num > sizeof(BitMap))
+    if (num > sizeof(BitMap) * 8)
     {
         std::stringstream exc;
         exc << "Number "
             << num << " cannot be mapped 'cos it is out "
                       "of range, it must be less than "
-            << sizeof(BitMap) << ";";
+            << sizeof(BitMap) * 8 << ";";
         throw std::runtime_error(exc.str());
     }
 
