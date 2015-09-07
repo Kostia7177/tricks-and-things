@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ProtoTransformer
+namespace TricksAndThings
 {
 
 template<typename... Params> struct Params2TypesHierarchy;

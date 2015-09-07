@@ -21,7 +21,7 @@ template<class TaskQueue, ShutdownStrategies shutdownPolicy, class Statistics>
 class Worker
 {
     typename TaskQueue::ConsumerIdle idle;
-    size_t idx;
+    std::atomic<bool> threadStarted;
     bool workCompleted;
     Statistics statistics;
 
@@ -55,7 +55,6 @@ class Worker
     template<class Manager> Worker(TaskQueue &, Manager &);
     ~Worker();
 
-    size_t getIdx() const   { return idx; }
     void newDataAppeared()  { idle.interrupt(); }
     void completeWork();
     void clearStatistics()  { statistics.clear(); }

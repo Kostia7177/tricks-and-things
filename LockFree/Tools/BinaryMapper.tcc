@@ -20,29 +20,75 @@
 */
 
 #include<sstream>
+#include<stdexcept>
+#include "../detail/casIf.hpp"
+#include "../../Tools/GccBug47226Satellite.hpp"
 
 namespace TricksAndThings { namespace LockFree {
 
-template<class BitMap, class Condition>
-BitMap BinaryMapper<BitMap, Condition>::int2ShiftedBit(size_t num)
+template<class BitMap>
+BitMap int2ShiftedBit(size_t num)
 {
-    if (num > sizeof(BitMap) * 8)
+    size_t sizeOfBitMap = sizeof(BitMap) * 8;
+    if (num > sizeOfBitMap)
     {
         std::stringstream exc;
         exc << "Number "
             << num << " cannot be mapped 'cos it is out "
                       "of range, it must be less than "
-            << sizeof(BitMap) * 8 << ";";
+            << sizeOfBitMap << ";";
         throw std::runtime_error(exc.str());
     }
 
-    BitMap newBit = 0x1;
-    while (num)
+    return pow(2, num);
+}
+
+template<class BitMap>
+BitMap lowestBit(BitMap value)
+{
+    BitMap retBit = value - 1;
+    retBit ^= value;
+    retBit &= value;
+
+    return retBit;
+}
+
+template<class BitMap, class Condition>
+template<typename... Args>
+bool BinaryMapper<BitMap, Condition>::lambdaAtPop(
+    size_t *ret,
+    BitMap &value,
+    Args &&... args)
+{
+    GccBug47226Satellite();
+    if (bitMap == 0)
+    { return false; }
+
+    BitMap retBit = lowestBit(value);
+
+    *ret = shiftedBit2Int(retBit);
+
+    if (!matches(condition, false, *ret, std::forward<Args>(args)...))
     {
-        -- num;
-        newBit <<= 1;
+        value &= ~retBit;
     }
-    return newBit;
+
+    return true;
+}
+
+template<class BitMap, class Condition>
+template<typename... Args>
+bool BinaryMapper<BitMap, Condition>::lambdaAtPush(
+    size_t num,
+    BitMap &value,
+    Args &&... args)
+{
+    GccBug47226Satellite();
+    if (!matches(condition, true, num, std::forward<Args>(args)...)) { return false; }
+
+    value |= int2ShiftedBit<BitMap>(num);
+
+    return true;
 }
 
 template<class BitMap, class Condition>
@@ -51,37 +97,44 @@ void BinaryMapper<BitMap, Condition>::push(
     size_t num,
     Args &&... args)
 {
-    if (!condition(std::forward<Args>(args)...)) { return; }
-
-    bitMap.fetch_or(int2ShiftedBit(num));
+    detail::casIf<>(bitMap,
+                    std::bind(&BinaryMapper::lambdaAtPush<Args...>,
+                              this,
+                              num,
+                              std::placeholders::_1,
+                              std::forward<Args>(args)...));
 }
 
 template<class BitMap, class Condition>
-bool BinaryMapper<BitMap, Condition>::pop(size_t *ret)
+template<class... Args>
+bool BinaryMapper<BitMap, Condition>::pop(
+    size_t *ret,
+    Args &&... args)
 {
-    BitMap retBit;
-    bool nothing = !detail::casIf<>(bitMap, [&](BitMap &value)
-                                            {
-                                                if (bitMap == 0)
-                                                { return false; }
+    return detail::casIf<>(bitMap,
+                           std::bind(&BinaryMapper::lambdaAtPop<Args...>,
+                                     this,
+                                     ret,
+                                     std::placeholders::_1,
+                                     std::forward<Args>(args)...));
+}
 
-                                                retBit = value - 1;
-                                                retBit ^= value;
-                                                retBit &= value;
-                                                value &= ~retBit;
-                                                return true;
-                                            });
-    if (nothing) { return false; }
+template<class BitMap, class Condition>
+bool BinaryMapper<BitMap, Condition>::getLowest1(
+    size_t *ret,
+    bool invert)
+{
+    BitMap retBit = bitMap.load();
+    if (invert) { retBit = ~retBit; }
 
-    int num = 0;
-    while (retBit != 1)
+    if (retBit)
     {
-        ++ num;
-        retBit >>= 1;
+        retBit = lowestBit(retBit);
+        *ret = shiftedBit2Int(retBit);
+        return true;
     }
-    *ret = num;
 
-    return true;
+    return false;
 }
 
 } }

@@ -4,7 +4,7 @@
 #include "Hierarchy2Params.hpp"
 #include "Binders/BindNotNullsOnly.hpp"
 
-namespace ProtoTransformer
+namespace TricksAndThings
 {
 
 template<class F, typename... Params>

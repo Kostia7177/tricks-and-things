@@ -134,24 +134,4 @@ bool FewToSingle<T, C>::pop(Type &ret)
     return true;
 }
 
-template<typename T, class C>
-size_t FewToSingle<T, C>::ClientHub::Ptr::getConsumerIdx()
-{
-    valueBak = ptr->consumerIdx.load();
-    return valueBak;
-}
-
-template<typename T, class C>
-bool FewToSingle<T, C>::ClientHub::Ptr::syncIdx(size_t *idx)
-{
-    if (ptr->consumerIdx.compare_exchange_strong(valueBak,
-                                                 *idx))
-    {
-        return true;
-    }
-    *idx = valueBak;
-
-    return false;
-}
-
 } } }

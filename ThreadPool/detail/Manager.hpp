@@ -29,8 +29,7 @@ class Manager
     template<class W> void workerResumed(const W &)
     { -- numOfWorkersAwaiting; }
 
-    size_t onNewWorker()
-    { return numOfWorkers ++ ; }
+    void onNewWorker() { numOfWorkers ++ ; }
 
     void wait(size_t threshold);
 };

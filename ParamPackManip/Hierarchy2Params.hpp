@@ -3,6 +3,8 @@
 #include <type_traits>
 #include "SignatureChecker.hpp"
 
+namespace TricksAndThings {
+
 struct ParameterListPassed {};
 struct ParameterListRequired {};
 
@@ -156,3 +158,4 @@ struct Hierarchy2Params<H, 0>
         }
     };
 };
+}

@@ -38,9 +38,9 @@ template<class T> using Queue = LockFree::Queues::FewToLot<T,
                                                                                     LockFree::Queues::Components::WithInfoCalls>>;
 }
 
-template<template<class> class Q = detail::Queue,
-         ShutdownStrategies shutdownPolicy = gracefulShutdown,
-         class Statistics = detail::NullStatistics>
+template<ShutdownStrategies shutdownPolicy = gracefulShutdown,
+         class Statistics = detail::NullStatistics,
+         template<class> class Q = detail::Queue>
 class ThreadPool
 {
     struct TaskIfc

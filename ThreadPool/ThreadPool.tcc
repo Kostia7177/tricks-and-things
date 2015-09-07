@@ -22,8 +22,8 @@
 
 namespace TricksAndThings {
 
-template<template<class> class Q, ShutdownStrategies shutdownPolicy, class Statistics>
-ThreadPool<Q, shutdownPolicy, Statistics>::ThreadPool(size_t n)
+template<ShutdownStrategies shutdownPolicy, class Statistics, template<class> class Q>
+ThreadPool<shutdownPolicy, Statistics, Q>::ThreadPool(size_t n)
     : tasks(n),
       manager(n, tasks)
 {
@@ -33,9 +33,9 @@ ThreadPool<Q, shutdownPolicy, Statistics>::ThreadPool(size_t n)
     }
 }
 
-template<template<class> class Q, ShutdownStrategies shutdownPolicy, class Statistics>
+template<ShutdownStrategies shutdownPolicy, class Statistics, template<class> class Q>
 template<class F, class... Args>
-void ThreadPool<Q, shutdownPolicy, Statistics>::schedule(
+void ThreadPool<shutdownPolicy, Statistics, Q>::schedule(
     F f, 
     Args &&...args)
 {
@@ -49,9 +49,9 @@ void ThreadPool<Q, shutdownPolicy, Statistics>::schedule(
     queuePtr->apply([&](size_t idx) { workers[idx]->newDataAppeared(); });
 }
 
-template<template<class> class Q, ShutdownStrategies shutdownPolicy, class Statistics>
+template<ShutdownStrategies shutdownPolicy, class Statistics, template<class> class Q>
 template<class F, class... Args>
-void ThreadPool<Q, shutdownPolicy, Statistics>::applyOnWorkers(
+void ThreadPool<shutdownPolicy, Statistics, Q>::applyOnWorkers(
     F f,
     Args &&...args)
 {

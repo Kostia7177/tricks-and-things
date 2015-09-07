@@ -25,32 +25,61 @@
 namespace TricksAndThings { namespace LockFree { namespace Queues
 {
 
-template<class Subqueue, class Balancer>
-Subqueue *WithParallelConsumers<Subqueue, Balancer>::selectSubqueue(size_t *idxRet)
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
+template<typename T>
+void WithParallelConsumers<Subqueue, b1, b2, M>::DoLookup::tryFix(bool &fetched, T &p)
+{
+    size_t idx;
+    // first, look, wether there is any queue left by
+    // it's consumer
+    if (subj->exitedConsumersMap.getLowest1(&idx))
+    {
+        fetched = subj->subqueues[idx].pop(p);
+    }
+
+    if (!fetched
+        && subj->workloadMap.getLowest0(&idx))
+    {
+        fetched = subj->subqueues[idx].pop(p);
+    }
+
+    if (fetched)
+    {
+        subj->pushWayBalancer.push(idx);
+    }
+}
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
+bool WithParallelConsumers<Subqueue, b1, b2, M>::DoLookup::pop(size_t *idxRet)
 {
     do
     {
-        if (!numOfConsumers) { return 0; }
-
-        if (!balancer.pop(idxRet))
-        {
-            typename Subqueue::ClientHub::Ptr clientHubPtr = &clientHub;
-            size_t idx = clientHubPtr->getConsumerIdx();
-            do
-            {
-                *idxRet = idx ++ ;
-                if (!subqueues[idx].ready()) { idx = 0; }
-            }
-            while (!clientHubPtr->syncIdx(&idx));
-        }
+        if (!subj->workloadMap.pop(idxRet)) { return false; }
     }
-    while (exitedConsumersMap.contains(*idxRet));
+    while (subj->exitedConsumersMap.contains(*idxRet));
+}
+
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
+Subqueue *WithParallelConsumers<Subqueue, b1, b2, M>::selectSubqueue(size_t *idxRet)
+{
+    if (!numOfConsumers) { return 0; }
+
+    if (!pushWayBalancer.pop(idxRet))
+    {
+        typename Subqueue::ClientHub::Ptr clientHubPtr = &clientHub;
+        size_t idx = clientHubPtr->getConsumerIdx();
+        do
+        {
+            *idxRet = idx ++ ;
+            if (!subqueues[idx].ready()) { idx = 0; }
+        }
+        while (!clientHubPtr->syncIdx(&idx));
+    }
 
     return &subqueues[*idxRet];
 }
 
-template<class Subqueue, class Balancer>
-Subqueue *WithParallelConsumers<Subqueue, Balancer>::getSubqueue()
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
+Subqueue *WithParallelConsumers<Subqueue, b1, b2, M>::getSubqueue()
 {
     size_t idx;
     if (exitedConsumersMap.pop(&idx))
@@ -71,9 +100,12 @@ Subqueue *WithParallelConsumers<Subqueue, Balancer>::getSubqueue()
     return 0;
 }
 
-template<class Subqueue, class Balancer>
-WithParallelConsumers<Subqueue, Balancer>::WithParallelConsumers(size_t n)
-    : numOfConsumers(0)
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
+WithParallelConsumers<Subqueue, b1, b2, M>::WithParallelConsumers(size_t n)
+    : numOfConsumers(0),
+      workloadMap(subqueues),
+      pushWayBalancer(this),
+      popWayBalancer(this)
 {
     if (numOfConsumers > sizeof(subqueues) / sizeof(Subqueue))
     {
@@ -86,8 +118,8 @@ WithParallelConsumers<Subqueue, Balancer>::WithParallelConsumers(size_t n)
                                             { subqueue.init(&numOfConsumers); });
 }
 
-template<class Subqueue, class Balancer>
-WithParallelConsumers<Subqueue, Balancer>::ConsumerSideProxy::ConsumerSideProxy(WithParallelConsumers *q)
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
+WithParallelConsumers<Subqueue, b1, b2, M>::ConsumerSideProxy::ConsumerSideProxy(WithParallelConsumers *q)
     : queue(q),
       threadId(std::this_thread::get_id())
 {
@@ -99,17 +131,19 @@ WithParallelConsumers<Subqueue, Balancer>::ConsumerSideProxy::ConsumerSideProxy(
     }
 
     subqueue = queue->getSubqueue();
+    subqueueIdx = subqueue - queue->subqueues;
 }
 
-template<class Subqueue, class Balancer>
-WithParallelConsumers<Subqueue, Balancer>::ConsumerSideProxy::~ConsumerSideProxy()
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
+WithParallelConsumers<Subqueue, b1, b2, M>::ConsumerSideProxy::~ConsumerSideProxy()
 {
     -- queue->numOfConsumers;
-    queue->exitedConsumersMap.push(queue->getIdx(subqueue));
+    queue->workloadMap.erase(subqueueIdx);
+    queue->exitedConsumersMap.push(subqueueIdx);
 }
 
-template<class Subqueue, class Balancer>
-bool WithParallelConsumers<Subqueue, Balancer>::ConsumerSideProxy::pop(Type &p)
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
+bool WithParallelConsumers<Subqueue, b1, b2, M>::ConsumerSideProxy::pop(Type &p)
 {
     std::thread::id caller = std::this_thread::get_id();
     if (threadId != caller)
@@ -121,14 +155,22 @@ bool WithParallelConsumers<Subqueue, Balancer>::ConsumerSideProxy::pop(Type &p)
         throw std::runtime_error(exc.str());
     }
 
-    bool ret = subqueue->pop(p);
-    if (ret) { queue->decrSize(); }
+    bool fetched = subqueue->pop(p);
+    if (fetched)
+    {
+        queue->pushWayBalancer.push(subqueueIdx);
+    }
+    else
+    {
+        queue->popWayBalancer.tryFix(fetched, p);
+    }
+    if (fetched) { queue->decrSize(); }
 
-    return ret;
+    return fetched;
 }
 
-template<class Subqueue, class Balancer>
-WithParallelConsumers<Subqueue, Balancer>::ProviderSideProxy::ProviderSideProxy(WithParallelConsumers *q)
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
+WithParallelConsumers<Subqueue, b1, b2, M>::ProviderSideProxy::ProviderSideProxy(WithParallelConsumers *q)
     : queue(q),
       idx(0)
 {
@@ -142,14 +184,8 @@ WithParallelConsumers<Subqueue, Balancer>::ProviderSideProxy::ProviderSideProxy(
     queue->clientHub.onNewProvider();
 }
 
-template<class Subqueue, class Balancer>
-WithParallelConsumers<Subqueue, Balancer>::ProviderSideProxy::~ProviderSideProxy()
-{
-    queue->clientHub.onProviderExited();
-}
-
-template<class Subqueue, class Balancer>
-void WithParallelConsumers<Subqueue, Balancer>::ProviderSideProxy::push(Type &&p)
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
+void WithParallelConsumers<Subqueue, b1, b2, M>::ProviderSideProxy::push(Type &&p)
 {
     if (Subqueue *subqueue = queue->selectSubqueue(&idx))
     {
@@ -159,20 +195,14 @@ void WithParallelConsumers<Subqueue, Balancer>::ProviderSideProxy::push(Type &&p
     else { throw std::runtime_error("No initialized sub-queue found!"); }
 }
 
-template<class Subqueue, class Balancer>
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
 template<class F>
-void WithParallelConsumers<Subqueue, Balancer>::ConsumerIdle::until(F f)
+void WithParallelConsumers<Subqueue, b1, b2, M>::ConsumerIdle::until(F f)
 {
     std::unique_lock<std::mutex> locker(lock);
     awaiting = true;
     check.wait(locker, f);
     awaiting = false;
-}
-
-template<class Subqueue, class Balancer>
-void WithParallelConsumers<Subqueue, Balancer>::ConsumerIdle::interrupt()
-{
-    if (awaiting) { kick(); }
 }
 
 } } }

@@ -3,7 +3,7 @@
 #include "../Tools/Int2Type.hpp"
 #include "Hierarchy2Params.hpp"
 
-namespace ProtoTransformer
+namespace TricksAndThings
 {
 
 template<template<int, typename> class Bind, typename... Params>

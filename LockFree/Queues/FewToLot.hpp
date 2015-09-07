@@ -26,6 +26,7 @@
 #include "../detail/UsefulDefs.hpp"
 #include "Traits.hpp"
 #include "WithParallelConsumers.hpp"
+#include "../detail/ThreadSafeClientHub.hpp"
 
 namespace TricksAndThings { namespace LockFree
 {
@@ -93,36 +94,7 @@ class FewToSingle
     void push(Type &&);
     bool pop(Type &);
 
-    class ClientHub
-    {
-        SizeAtomic consumerIdx;
-
-        public:
-
-        ClientHub() : consumerIdx(0){}
-
-        class Ptr
-        {   // proxy - immitates a pointer to a 'ClientHub'
-            // to implement 'getConsumerIdx' and 'syncIdx';
-            // supports concurrent multi-thread operating
-            // with notepad index when 'push' chooses the
-            // notepad for writing a data;
-            ClientHub * const ptr;  // target hub itself;
-            size_t valueBak;    // thread-spec. value backup;
-
-            public:
-
-            Ptr(ClientHub *p) : ptr(p), valueBak(0) {}
-
-            Ptr *operator->() { return this; }
-
-            size_t getConsumerIdx();
-            bool syncIdx(size_t *);
-        };
-
-        void onNewProvider(){}
-        void onProviderExited(){}
-    };
+    typedef ThreadSafeClientHub ClientHub;
 };
 
 } // <-- namespace detail

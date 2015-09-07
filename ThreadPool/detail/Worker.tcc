@@ -6,12 +6,13 @@ template<class Manager>
 Worker<TaskQueue, shutdownPolicy, Statistics>::Worker(
     TaskQueue &tasks,
     Manager &manager)
-    : idle(tasks),
-      idx(manager.onNewWorker()),
+    : threadStarted(false),
       workCompleted(false),
       thread([&]
              {
+                manager.onNewWorker();
                 typename TaskQueue::ConsumerSideProxy queuePtr = &tasks;
+                threadStarted = true;
                 typename TaskQueue::Type taskPtr;
                 do
                 {
@@ -23,7 +24,6 @@ Worker<TaskQueue, shutdownPolicy, Statistics>::Worker(
                         taskPtr->doIt();
                     }
                     taskPtr.reset();
-                    queuePtr->notifyBalancer(*this);
                     if (!queuePtr->pop(taskPtr))
                     {
                         manager.workerStopped(*this);
@@ -40,6 +40,7 @@ Worker<TaskQueue, shutdownPolicy, Statistics>::Worker(
                        ::goOn(taskPtr.get(), !workCompleted));
              })
 {
+    while (!threadStarted);
 }
 
 template<class TaskQueue, ShutdownStrategies shutdownPolicy, class Statistics>

@@ -3,7 +3,7 @@
 #include "../../Tools/NullType.hpp"
 #include "Bases.hpp"
 
-namespace ProtoTransformer
+namespace TricksAndThings
 {
 
 template<int idx, typename T>

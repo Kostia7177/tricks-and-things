@@ -22,14 +22,40 @@
 
 #include "../detail/UsefulDefs.hpp"
 #include "../Tools/BinaryMapper.hpp"
+#include<boost/mpl/map.hpp>
+#include<boost/mpl/at.hpp>
 #include<thread>
 #include<mutex> // never mind, it's really still lock-free,
 #include<condition_variable>    // yeah, don't worry;
 
-namespace TricksAndThings { namespace LockFree { namespace Queues
+namespace TricksAndThings { namespace LockFree
 {
 
-template<class Subqueue, class Balancer = BinaryMapper<uint64_t, ContainerIsNearEmpty>>
+namespace detail
+{
+enum { passBy, doLookup };
+}
+
+namespace Queues {
+
+enum PushWayBalancer
+{
+    passByPushWayBalancer = detail::passBy,
+    pushWayLookup = detail::doLookup
+};
+
+enum PopWayBalancer
+{
+    passByPopWayBalancer = detail::passBy,
+    popWayLookup = detail::doLookup
+};
+
+namespace Bm = boost::mpl;
+typedef uint64_t MappingField;
+template<class Subqueue,
+         PushWayBalancer pushWayBalancerIdx = passByPushWayBalancer,
+         PopWayBalancer popWayBalancerIdx = passByPopWayBalancer,
+         class WorkloadMap = BinaryMapper<MappingField, ContainerIsNearEmpty<Subqueue>>>
 class WithParallelConsumers
     : public Subqueue::Cfg::InfoCalls
 {   // wrapper for a pack of sub-queues, each of wich is
@@ -40,14 +66,39 @@ class WithParallelConsumers
     Subqueue subqueues[Subqueue::Cfg::numOfConsumersLimit]; // sub-queue pack itself;
     SizeAtomic numOfConsumers;
     typename Subqueue::ClientHub clientHub;
-    Balancer balancer;
-    BinaryMapper<uint64_t> exitedConsumersMap;
+    WorkloadMap workloadMap;
+    BinaryMapper<MappingField> exitedConsumersMap;
+
+    struct PassBy
+    {
+        PassBy(WithParallelConsumers *){}
+        template<typename T> void tryFix(bool &, T &){}
+        bool pop(size_t *){ return false; }
+        void push(size_t){}
+    };
+    class DoLookup
+    {
+        WithParallelConsumers *subj;
+        public:
+        DoLookup(WithParallelConsumers *s) : subj(s){}
+        template<typename T> void tryFix(bool &, T &);
+        bool pop(size_t *);
+        void push(size_t num)
+        { subj->workloadMap.push(num); }
+    };
+
+    typedef typename Bm::map
+        <
+            Bm::pair<Bm::int_<detail::passBy>, PassBy>,
+            Bm::pair<Bm::int_<detail::doLookup>, DoLookup>
+        >::type Balancers;
+
+    typename boost::mpl::at<Balancers, Bm::int_<pushWayBalancerIdx>>::type pushWayBalancer;
+    typename boost::mpl::at<Balancers, Bm::int_<popWayBalancerIdx>>::type popWayBalancer;
 
     Subqueue *selectSubqueue(size_t *); // multiplexes input ('push') requests;
     Subqueue *getSubqueue();            // acquires the sub-queue when a consumer
                                         // is initializing;
-    size_t getIdx(Subqueue *subqueue)
-    { return subqueue - subqueues; }
 
     public:
 
@@ -62,6 +113,7 @@ class WithParallelConsumers
     {
         WithParallelConsumers *queue;
         Subqueue *subqueue;
+        size_t subqueueIdx;
         std::thread::id threadId;
         public:
         ConsumerSideProxy(WithParallelConsumers *);
@@ -69,9 +121,6 @@ class WithParallelConsumers
         ConsumerSideProxy *operator->() { return this; }
         size_t subSize(){ return subqueue->size(); }
         bool pop(Type &);
-        template<class Consumer>
-        void notifyBalancer(const Consumer &consumer)
-        { queue->balancer.push(consumer.getIdx(), *subqueue); }
     };
 
     class ProviderSideProxy
@@ -80,7 +129,8 @@ class WithParallelConsumers
         size_t idx;
         public:
         ProviderSideProxy(WithParallelConsumers *);
-        ~ProviderSideProxy();
+        ~ProviderSideProxy()
+        { queue->clientHub.onProviderExited(); }
         ProviderSideProxy *operator->() { return this; }
         void push(Type &&);
         template<class F>
@@ -93,12 +143,11 @@ class WithParallelConsumers
         std::condition_variable check;
         std::atomic<bool> awaiting;
         public:
-        ConsumerIdle(WithParallelConsumers &)
-            : awaiting(false){}
-        template<class F>
-        void until(F f);
+        ConsumerIdle() : awaiting(false){}
+        template<class F> void until(F f);
         void kick(){ check.notify_one(); }
-        void interrupt();
+        void interrupt()
+        { if (awaiting) { kick(); } }
     };
 };
 

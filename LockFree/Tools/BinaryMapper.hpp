@@ -21,26 +21,54 @@
 */
 
 #include<atomic>
-#include "../detail/AlwaysYes.hpp"
+#include<cstddef>
+#include<functional>
+#include<math.h>
+#include "../../Tools/NullType.hpp"
 
 namespace TricksAndThings { namespace LockFree {
 
+template<class Container>
 class ContainerIsNearEmpty
 {
+    Container *containers;
     size_t treshold;
+
     public:
-    ContainerIsNearEmpty(size_t t = 1) : treshold(t) {}
-    template<class C>
-    bool operator()(const C &container)
-    { return container.size() <= treshold; }
+
+    ContainerIsNearEmpty(Container *c, size_t t = 1)
+        : treshold(t), containers(c){}
+
+    bool operator()(size_t idx) const
+    { return containers[idx].size() <= treshold; }
 };
 
-template<class BitMap, class Condition = TricksAndThings::detail::AlwaysYes>
+template<class BitMap> BitMap int2ShiftedBit(size_t);
+
+template<class BitMap> size_t shiftedBit2Int(BitMap bit)
+{ return log2(bit); }
+
+template<class BitMap> BitMap lowestBit(BitMap);
+
+template<class BitMap, class Condition = NullType>
 class BinaryMapper
 {
     std::atomic<BitMap> bitMap;
     Condition condition;
-    BitMap int2ShiftedBit(size_t);
+
+    template<typename... Args>
+    static bool matches(const NullType &, bool isPush, size_t, Args &&...)
+    { return isPush; }
+
+    template<class C, typename... Args>
+    static bool matches(const C &c, bool, size_t idx, Args &&... args)
+    { return c(idx, std::forward<Args>(args)...); }
+
+    template<typename... Args>
+    bool lambdaAtPop(size_t *, BitMap &, Args &&...);
+
+    template<typename... Args>
+    bool lambdaAtPush(size_t, BitMap &, Args &&...);
 
     public:
 
@@ -50,10 +78,19 @@ class BinaryMapper
     template<class... Args>
     void push(size_t, Args &&...);
 
-    bool pop(size_t *);
+    template<class... Args>
+    bool pop(size_t *, Args &&...);
+
+    void erase(size_t num)
+    { bitMap.fetch_and(~int2ShiftedBit<BitMap>(num)); }
+
+    bool getLowest1(size_t *, bool = false);
+
+    bool getLowest0(size_t *p)
+    { return getLowest1(p, true); }
 
     bool contains(size_t num)
-    { return bitMap.load() & int2ShiftedBit(num); }
+    { return bitMap.load() & int2ShiftedBit<BitMap>(num); }
 };
 
 } }
