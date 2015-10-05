@@ -46,6 +46,7 @@ class ThreadPool
     struct TaskIfc
     {
         virtual void doIt() = 0;
+	virtual ~TaskIfc() {}
     };
 
     template<class F>

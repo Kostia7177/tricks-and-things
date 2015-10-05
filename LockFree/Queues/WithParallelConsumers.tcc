@@ -27,7 +27,7 @@ namespace TricksAndThings { namespace LockFree { namespace Queues
 
 template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
 template<typename T>
-void WithParallelConsumers<Subqueue, b1, b2, M>::DoLookup::tryFix(bool &fetched, T &p)
+void WithParallelConsumers<Subqueue, b1, b2, M>::Itself::DoLookup::tryFix(bool &fetched, T &p)
 {
     size_t idx;
     // first, look, wether there is any queue left by
@@ -49,7 +49,7 @@ void WithParallelConsumers<Subqueue, b1, b2, M>::DoLookup::tryFix(bool &fetched,
     }
 }
 template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
-bool WithParallelConsumers<Subqueue, b1, b2, M>::DoLookup::pop(size_t *idxRet)
+bool WithParallelConsumers<Subqueue, b1, b2, M>::Itself::DoLookup::pop(size_t *idxRet)
 {
     do
     {
@@ -59,7 +59,7 @@ bool WithParallelConsumers<Subqueue, b1, b2, M>::DoLookup::pop(size_t *idxRet)
 }
 
 template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
-Subqueue *WithParallelConsumers<Subqueue, b1, b2, M>::selectSubqueue(size_t *idxRet)
+Subqueue *WithParallelConsumers<Subqueue, b1, b2, M>::Itself::selectSubqueue(size_t *idxRet)
 {
     if (!numOfConsumers) { return 0; }
 
@@ -79,7 +79,7 @@ Subqueue *WithParallelConsumers<Subqueue, b1, b2, M>::selectSubqueue(size_t *idx
 }
 
 template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
-Subqueue *WithParallelConsumers<Subqueue, b1, b2, M>::getSubqueue()
+Subqueue *WithParallelConsumers<Subqueue, b1, b2, M>::Itself::getSubqueue()
 {
     size_t idx;
     if (exitedConsumersMap.pop(&idx))
@@ -101,7 +101,7 @@ Subqueue *WithParallelConsumers<Subqueue, b1, b2, M>::getSubqueue()
 }
 
 template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
-WithParallelConsumers<Subqueue, b1, b2, M>::WithParallelConsumers(size_t n)
+WithParallelConsumers<Subqueue, b1, b2, M>::Itself::Itself(size_t n)
     : numOfConsumers(0),
       workloadMap(subqueues),
       pushWayBalancer(this),
@@ -117,10 +117,16 @@ WithParallelConsumers<Subqueue, b1, b2, M>::WithParallelConsumers(size_t n)
     std::for_each(subqueues, subqueues + n, [&](Subqueue &subqueue)
                                             { subqueue.init(&numOfConsumers); });
 }
+template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
+WithParallelConsumers<Subqueue, b1, b2, M> &WithParallelConsumers<Subqueue, b1, b2, M>::operator=(WithParallelConsumers &&p)
+{
+    itself = std::move(p.itself);
+    return *this;
+}
 
 template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
 WithParallelConsumers<Subqueue, b1, b2, M>::ConsumerSideProxy::ConsumerSideProxy(WithParallelConsumers *q)
-    : queue(q),
+    : queue(q->itself),
       threadId(std::this_thread::get_id())
 {
     if (!queue)
@@ -171,7 +177,7 @@ bool WithParallelConsumers<Subqueue, b1, b2, M>::ConsumerSideProxy::pop(Type &p)
 
 template<class Subqueue, PushWayBalancer b1, PopWayBalancer b2, class M>
 WithParallelConsumers<Subqueue, b1, b2, M>::ProviderSideProxy::ProviderSideProxy(WithParallelConsumers *q)
-    : queue(q),
+    : queue(q->itself),
       idx(0)
 {
     if (!queue)
