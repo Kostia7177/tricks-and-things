@@ -66,7 +66,6 @@ class Params2Hierarchy
             public: //                                                                          |
                             //                                                                  |
             typedef typename GetNext::Field Field;  //                                          |
-//            typedef typename GetNext::RetType RetType; //                                       |
         };  //                                                                                  |
 //   }                                                                                          |
         //                                                                                      |
@@ -74,7 +73,6 @@ class Params2Hierarchy
         struct Get<arg, true>   //                                                              |
         {   // (*field found*) - border case;                                                   |
             typedef Core::Field Field;  //                                                      |
-//            typedef decltype(Field::value) RetType;  //                                         |
         };  //                                                                                  |
         //                                                                                      |
         class Type   //                                                                         |
@@ -89,11 +87,9 @@ class Params2Hierarchy
             typedef const Int2Type<true> ThisField;
             //
             template<int pos>
-//            typename RetType
             decltype(Get<pos>::Field::value) getSw(GoForw &) const     { return tail.get<pos>(); }
             //
             template<int pos>
-//            typename RetType
             decltype(Get<pos>::Field::value) getSw(ThisField &) const  { return field.value; }
 
             typedef const Int2Type<false> PassBy;
@@ -127,7 +123,6 @@ class Params2Hierarchy
             Type(){}
 
             template<int pos>
-//            typename RetType
             decltype(Get<pos>::Field::value) get() const
             {
                 enum { thisField = pos == Field::pos };
@@ -210,7 +205,6 @@ class Params2Hierarchy
     enum { length = CoreImpl::Type::length };
 
     // accessing the hierarchy's field number 'pos' (starts with 1) for reading...
-//typename RetType
     template<int pos> decltype(CoreImpl::template Get<pos>::Field::value) field() const
     { return core.template get<pos>(); }
 
