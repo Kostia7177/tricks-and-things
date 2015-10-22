@@ -101,7 +101,11 @@ class FewToSingle
 
 namespace Queues
 {
-template<typename T, class Cfg = Traits<>> using FewToLot = WithParallelConsumers<detail::FewToSingle<T, Cfg>>;
+template<typename T, class Cfg = Traits<>>
+using FewToLot = WithParallelConsumers<detail::FewToSingle<T, Cfg>>;
+
+template<typename T, class Cfg = Traits<DefaultAllocatingStorage, Components::WithInfoCalls>>
+using FewToLot1 = WithParallelConsumers<detail::FewToSingle<T, Cfg>, pushWayLookup>;
 }
 
 } }
