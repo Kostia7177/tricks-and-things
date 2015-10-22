@@ -28,12 +28,15 @@ class FewToLot2Subqueue
     bool ready(){ return isReady; }
     void push(Type &&p){ itself.push(std::forward<Type>(p)); }
     bool pop(Type &p){ return itself.pop(p); }
+    bool empty() const  { return itself.empty(); }
+    size_t size() const { return itself.size(); }
 
     typedef ThreadSafeClientHub ClientHub;
 };
 }
 namespace Queues
 {
-template<typename T, class Cfg = Traits<DefaultAllocatingStorage,Components::WithInfoCalls>> using FewToLot2 = WithParallelConsumers<detail::FewToLot2Subqueue<T, Cfg>, pushWayLookup, popWayLookup>;
+template<typename T, class Cfg = Traits<DefaultAllocatingStorage, Components::WithInfoCalls>>
+using FewToLot2 = WithParallelConsumers<detail::FewToLot2Subqueue<T, Cfg>, pushWayLookup, popWayLookup>;
 }
 } }
