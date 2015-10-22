@@ -4,7 +4,9 @@
 #include "../Tools/OneTwo.hpp"
 #include <type_traits>
 
-template<class RetType, class... Params>
+namespace TricksAndThings {
+
+template<class Ret, class... Params>
 class SignatureChecker
 {   // compiler's error message humanizer;
     // too much specific thing - usage case see at 'Hierarchy2Params' class;
@@ -12,7 +14,7 @@ class SignatureChecker
 
     template<class PassedAsFunctor, class Operator, class NextStep>
     struct Check
-    {
+    {   // see (*)
         static void doIt(Int2Type<true>) {} // <-----------------------------------------------------+
                                             //                                                       |
         static void doIt(Int2Type<false>)   //                                                       |
@@ -36,7 +38,7 @@ class SignatureChecker
     template<class PassedAsFunctor, class DefinedByContextTypesOperator>
     struct FailOnFalse
     {
-        static void doIt(Int2Type<true>) {}
+        static void doIt(Int2Type<true>) {} // ...and do not fail on true;
 
         static void doIt(Int2Type<false>)
         {
@@ -50,12 +52,12 @@ class SignatureChecker
 
     public:
 
-    template<class F>
-    SignatureChecker(F *f2Check)
+    template<class PassedAsFunctionPtr>
+    SignatureChecker(PassedAsFunctionPtr *f2Check)
     {
-        using FGood = RetType(Params...);
+        using FGood = Ret(Params...);
 
-        static_assert(std::is_same<FGood, F>::value,
+        static_assert(std::is_same<FGood, PassedAsFunctionPtr>::value,
                       "\n\n\tSignature of a function does not match the context types requirements!"
                       "\n\tFor details see the following error message. \n");
         FGood *fGood = f2Check;
@@ -67,16 +69,38 @@ class SignatureChecker
         // sadly, doesn'n detect errors whithin std::bind-wrapped functions;
         // just whithin simple functors with operator() and lambdas;
         //
+        typedef PassedAsFunctor F;  // shortcut;
+        // (*)
         // such a compile-time pipe of 'Check::doIt' overloaded calls that does nothing in runtime,
         // but breaks the build if a signature of passed functor doesn't match the one that required;
-        Check<PassedAsFunctor,                      RetType(PassedAsFunctor::*)(Params...),
-              Check<PassedAsFunctor,                RetType(PassedAsFunctor::*)(Params...) const,
-                    Check<PassedAsFunctor,          RetType(PassedAsFunctor::*)(Params...) volatile,
-                          Check<PassedAsFunctor,    RetType(PassedAsFunctor::*)(Params...) const volatile,
+        //
+        // purpose: to discard 'cv', 'lvalue ref' and 'rvalue ref' qualifiers from
+        //          F::operator()(Params...) signature - to check it's return type
+        //          and it's argument types only;
+        Check<F, Ret(F::*)(Params...),
+              Check<F, Ret(F::*)(Params...) const,
+                    Check<F, Ret(F::*)(Params...) volatile,
+                          Check<F, Ret(F::*)(Params...) const volatile,
+                                Check<F, Ret(F::*)(Params...) &,
+                                      Check<F, Ret(F::*)(Params...) const &,
+                                            Check<F, Ret(F::*)(Params...) volatile &,
+                                                  Check<F, Ret(F::*)(Params...) const volatile &,
+                                                        Check<F, Ret(F::*)(Params...) &&,
+                                                              Check<F, Ret(F::*)(Params...) const &&,
+                                                                    Check<F, Ret(F::*)(Params...) volatile &&,
+                                                                          Check<F, Ret(F::*)(Params...) const volatile &&,
 
-                                FailOnFalse<PassedAsFunctor,
-                                            RetType(PassedAsFunctor::*)(Params...)
+                                                                                FailOnFalse<PassedAsFunctor,
+                                                                                            Ret(F::*)(Params...)
+                                                                                           >
+                                                                               >
+                                                                         >
+                                                                   >
+                                                             >
+                                                       >
+                                                 >
                                            >
+                                     >
                                >
                          >
                    >
@@ -84,3 +108,5 @@ class SignatureChecker
              ::doIt(Begin());
     }
 };
+
+}
