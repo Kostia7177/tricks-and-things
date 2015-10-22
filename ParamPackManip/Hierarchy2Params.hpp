@@ -1,7 +1,7 @@
 #pragma once
 
 #include <type_traits>
-#include "SignatureChecker.hpp"
+#include "../SignatureManip/SignatureChecker.hpp"
 
 namespace TricksAndThings {
 

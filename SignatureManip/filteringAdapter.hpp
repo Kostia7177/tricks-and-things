@@ -1,8 +1,8 @@
 #pragma once
 #include <type_traits>
-#include "Params2Hierarchy.hpp"
-#include "Hierarchy2Params.hpp"
-#include "Binders/BindNotNullsOnly.hpp"
+#include "../ParamPackManip/Params2Hierarchy.hpp"
+#include "../ParamPackManip/Hierarchy2Params.hpp"
+#include "detail/Binders/BindNotNullsOnly.hpp"
 
 namespace TricksAndThings
 {
