@@ -23,7 +23,7 @@ template<typename T>
 class NoInfoCalls
 {
     T x;
-    size_t fail(T)
+    static size_t fail(T)
     {
         struct Inaccessable{};
         static_assert(std::is_same<T, Inaccessable>::value,
