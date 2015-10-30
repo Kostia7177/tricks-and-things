@@ -22,7 +22,6 @@
 
 #include "../detail/UsefulDefs.hpp"
 #include "../Tools/BinaryMapper.hpp"
-#include "BalancerIndexes.hpp"
 #include<boost/mpl/map.hpp>
 #include<boost/mpl/at.hpp>
 #include<thread>
@@ -58,34 +57,63 @@ class WithParallelConsumers
         typedef typename Cfg::template WorkloadMap<WorkloadMapCondition> WorkloadMap;
         WorkloadMap workloadMap;
 
-        BinaryMapper<MappingField> exitedConsumersMap;
-
-        struct PassBy
+        template<int, int = 0>struct WorkloadBalancer;
+        template<int unused>
+        struct WorkloadBalancer<0, unused>
         {
-            PassBy(Itself *){}
+            WorkloadBalancer(Itself *){}
             template<typename T> void tryFix(bool &, T &){}
             bool get(size_t *){ return false; }
             void put(size_t){}
         };
-        class DoLookup
+
+        template<int unused>
+        class WorkloadBalancer<1, unused>
         {
             Itself *subj;
+
             public:
-            DoLookup(Itself *s) : subj(s){}
-            template<typename T> void tryFix(bool &, T &);
-            bool get(size_t *);
+
+            WorkloadBalancer(Itself *s) : subj(s){}
+
+            template<typename T> void tryFix(bool &fetched, T &p)
+            {
+                size_t idx;
+                // first, look, wether there is any queue left by
+                // it's consumer
+                if (subj->exitedConsumersMap.getLowest(&idx, [&](size_t i)
+                            { return !subj->subqueues[i].empty(); }))
+                {
+                    fetched = subj->subqueues[idx].pop(p);
+                }
+
+                if (!fetched
+                        && subj->workloadMap.eject0If(&idx))
+                {
+                    fetched = subj->subqueues[idx].pop(p);
+                    subj->pushWayBalancer.put(idx);
+                }
+            }
+
+            bool get(size_t *idxRet)
+            {
+                do
+                {
+                    if (!subj->workloadMap.ejectIf(idxRet)) { return false; }
+                }
+                while (subj->exitedConsumersMap.contains(*idxRet));
+
+                return true;
+            }
+
             void put(size_t num)
             { subj->workloadMap.injectIf(num); }
         };
 
-        typedef typename Bm::map
-            <
-                Bm::pair<Bm::int_<detail::passBy>, PassBy>,
-                Bm::pair<Bm::int_<detail::doLookup>, DoLookup>
-            >::type Balancers;
+        WorkloadBalancer<Cfg::pushWayBalancer> pushWayBalancer;
+        WorkloadBalancer<Cfg::popWayBalancer> popWayBalancer;
 
-        typename boost::mpl::at<Balancers, Bm::int_<Cfg::pushWayBalancerIdx>>::type pushWayBalancer;
-        typename boost::mpl::at<Balancers, Bm::int_<Cfg::popWayBalancerIdx>>::type popWayBalancer;
+        BinaryMapper<MappingField> exitedConsumersMap;
 
         Subqueue *selectSubqueue(size_t *); // multiplexes input ('push') requests;
         Subqueue *getSubqueue();            // acquires the sub-queue when a consumer

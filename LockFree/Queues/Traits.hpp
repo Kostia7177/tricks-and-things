@@ -7,20 +7,9 @@
 #include "../../Tools/Int2Type.hpp"
 #include "../../Tools/NullType.hpp"
 #include "../Tools/BinaryMapper.hpp"
-#include "BalancerIndexes.hpp"
 
 namespace TricksAndThings { namespace LockFree { namespace Queues
 {
-enum PushWayBalancer
-{
-    passByPushWayBalancer = detail::passBy,
-    pushWayLookup = detail::doLookup
-};
-enum PopWayBalancer
-{
-    passByPopWayBalancer = detail::passBy,
-    popWayLookup = detail::doLookup
-};
 
 template<template<typename> class S, class Base = NullType>
 struct StorageIs : virtual Base
@@ -54,11 +43,11 @@ struct WorkloadMapConditionIs : virtual Base
 
 template<class N, class Base = NullType>
 struct PushWayBalancerIs : virtual Base
-{ enum { pushWayBalancerIdx = N::value }; };
+{ enum { pushWayBalancer = N::value }; };
 
 template<class N, class Base = NullType>
 struct PopWayBalancerIs : virtual Base
-{ enum { popWayBalancerIdx = N::value }; };
+{ enum { popWayBalancer = N::value }; };
 
 typedef Params2TypesHierarchy
     <
@@ -69,8 +58,8 @@ typedef Params2TypesHierarchy
         NumOfConsumersLimitIs<Int2Type<128>>,
         WorkloadMapIs<BinaryMapperCond64Bit>,
         WorkloadMapConditionIs<ContainerIsNearEmpty>,
-        PushWayBalancerIs<Int2Type<passByPushWayBalancer>>,
-        PopWayBalancerIs<Int2Type<passByPopWayBalancer>>
+        PushWayBalancerIs<Int2Type<false>>,
+        PopWayBalancerIs<Int2Type<false>>
     > DefaultSettings;
 template<class... Params>
 using Traits = EasyTraits<DefaultSettings, 0, Params...>;

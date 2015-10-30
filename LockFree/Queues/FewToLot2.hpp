@@ -46,8 +46,8 @@ using FewToLot2Traits =
     Traits
         <
             UsePolicyTemplate<InfoCallsAre, Components::WithInfoCalls>,
-            UsePolicy<PushWayBalancerIs, Int2Type<pushWayLookup>>,
-            UsePolicy<PopWayBalancerIs, Int2Type<popWayLookup>>,
+            UsePolicy<PushWayBalancerIs, Int2Type<true>>,
+            UsePolicy<PopWayBalancerIs, Int2Type<true>>,
             Params...
         >;
 template<typename T, class... Params>

@@ -109,7 +109,7 @@ using FewToLot1Traits =
     Traits
         <
             UsePolicyTemplate<SubInfoCallsAre, Components::WithInfoCalls>,
-            UsePolicy<PushWayBalancerIs, Int2Type<pushWayLookup>>,
+            UsePolicy<PushWayBalancerIs, Int2Type<true>>,
             Params...
         >;
 template<typename T, class... Params>

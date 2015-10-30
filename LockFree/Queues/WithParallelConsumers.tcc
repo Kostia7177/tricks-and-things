@@ -26,38 +26,6 @@ namespace TricksAndThings { namespace LockFree { namespace Queues
 {
 
 template<class Subqueue>
-template<typename T>
-void WithParallelConsumers<Subqueue>::Itself::DoLookup::tryFix(bool &fetched, T &p)
-{
-    size_t idx;
-    // first, look, wether there is any queue left by
-    // it's consumer
-    if (subj->exitedConsumersMap.getLowest(&idx, [&](size_t i)
-                                                  { return !subj->subqueues[i].empty(); }))
-    {
-        fetched = subj->subqueues[idx].pop(p);
-    }
-
-    if (!fetched
-        && subj->workloadMap.eject0If(&idx))
-    {
-        fetched = subj->subqueues[idx].pop(p);
-        subj->pushWayBalancer.put(idx);
-    }
-}
-template<class Subqueue>
-bool WithParallelConsumers<Subqueue>::Itself::DoLookup::get(size_t *idxRet)
-{
-    do
-    {
-        if (!subj->workloadMap.ejectIf(idxRet)) { return false; }
-    }
-    while (subj->exitedConsumersMap.contains(*idxRet));
-
-    return true;
-}
-
-template<class Subqueue>
 Subqueue *WithParallelConsumers<Subqueue>::Itself::selectSubqueue(size_t *idxRet)
 {
     if (!numOfConsumers) { return 0; }
