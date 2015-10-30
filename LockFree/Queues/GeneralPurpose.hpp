@@ -21,7 +21,7 @@
 */
 
 #include "Traits.hpp"
-#include "../detail/Entry.hpp"
+#include "detail/Entry.hpp"
 #include "../Tools/ObjHolder.hpp"
 #include "../detail/UsefulDefs.hpp"
 

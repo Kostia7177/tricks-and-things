@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../detail/UsefulDefs.hpp"
+#include "../../detail/UsefulDefs.hpp"
 #include <type_traits>
 
 namespace TricksAndThings { namespace LockFree { namespace Queues { namespace Components {

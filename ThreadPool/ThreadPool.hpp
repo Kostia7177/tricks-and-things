@@ -21,7 +21,7 @@
 */
 
 #include "../LockFree/Tools/DefaultAllocatingStorage.hpp"
-#include "../LockFree/Tools/InfoCalls.hpp"
+#include "../LockFree/Queues/Tools/InfoCalls.hpp"
 #include "../LockFree/Queues/Traits.hpp"
 #include "../LockFree/Queues/FewToLot.hpp"
 #include "detail/Manager.hpp"
@@ -33,9 +33,13 @@
 namespace TricksAndThings
 {
 namespace detail {
-template<class T> using Queue = LockFree::Queues::FewToLot<T,
-                                                           LockFree::Queues::Traits<LockFree::DefaultAllocatingStorage,
-                                                                                    LockFree::Queues::Components::WithInfoCalls>>;
+namespace Lfq = LockFree::Queues;
+template<class T>
+using Queue = Lfq::FewToLot
+                <
+                    T,
+                    Lfq::UsePolicyTemplate<Lfq::InfoCallsAre, Lfq::Components::WithInfoCalls>
+                >;
 }
 
 template<ShutdownStrategies shutdownPolicy = gracefulShutdown,
@@ -91,4 +95,4 @@ class ThreadPool
     { applyOnWorkers(&Worker::showStatistics, s); }
 };
 }
-#include "ThreadPool.tcc"
+#include "detail/ThreadPool.tcc"

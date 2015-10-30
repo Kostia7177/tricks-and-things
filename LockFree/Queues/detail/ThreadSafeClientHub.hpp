@@ -1,6 +1,6 @@
 #pragma once
 
-#include "UsefulDefs.hpp"
+#include "../../detail/UsefulDefs.hpp"
 
 namespace TricksAndThings { namespace LockFree { namespace detail
 {

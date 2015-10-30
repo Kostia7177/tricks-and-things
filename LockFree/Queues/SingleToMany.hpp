@@ -21,7 +21,7 @@
 */
 
 #include "../detail/UsefulDefs.hpp"
-#include "../detail/SubqueueBase.hpp"
+#include "detail/SubqueueBase.hpp"
 #include "WithParallelConsumers.hpp"
 #include "Traits.hpp"
 

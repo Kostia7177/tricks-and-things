@@ -22,6 +22,7 @@
 
 #include "../detail/UsefulDefs.hpp"
 #include "../Tools/BinaryMapper.hpp"
+#include "BalancerIndexes.hpp"
 #include<boost/mpl/map.hpp>
 #include<boost/mpl/at.hpp>
 #include<thread>
@@ -30,58 +31,41 @@
 
 namespace TricksAndThings { namespace LockFree
 {
-
-namespace detail
-{
-enum { passBy, doLookup };
-}
-
 namespace Queues {
 
-enum PushWayBalancer
-{
-    passByPushWayBalancer = detail::passBy,
-    pushWayLookup = detail::doLookup
-};
-
-enum PopWayBalancer
-{
-    passByPopWayBalancer = detail::passBy,
-    popWayLookup = detail::doLookup
-};
-
 namespace Bm = boost::mpl;
-typedef uint64_t MappingField;
 
-template<class Subqueue,
-         PushWayBalancer pushWayBalancerIdx = passByPushWayBalancer,
-         PopWayBalancer popWayBalancerIdx = passByPopWayBalancer,
-         class WorkloadMap = BinaryMapper<MappingField, ContainerIsNearEmpty<Subqueue>>>
+template<class Subqueue>
 class WithParallelConsumers
 {   // wrapper for a pack of sub-queues, each of wich is
     // dedicated to it's consumer;
     // holds (and hides) this pack and multiplexes input
     // requests ('push') calls between the sub-queues;
+    typedef typename Subqueue::Cfg Cfg;
     //
     // queue instance is to be shared by a number of consumers via
     // pointer-like proxies, so, the instance's body itself must
     // be wrapped by a shared-pointer;
     //
     struct Itself
-        : public Subqueue::Cfg::InfoCalls
+        : Cfg::InfoCalls
     {
         Subqueue subqueues[Subqueue::Cfg::numOfConsumersLimit]; // sub-queue pack itself;
         SizeAtomic numOfConsumers;
         typename Subqueue::ClientHub clientHub;
+
+        typedef typename Cfg::template WorkloadMapCondition<Subqueue> WorkloadMapCondition;
+        typedef typename Cfg::template WorkloadMap<WorkloadMapCondition> WorkloadMap;
         WorkloadMap workloadMap;
+
         BinaryMapper<MappingField> exitedConsumersMap;
 
         struct PassBy
         {
             PassBy(Itself *){}
             template<typename T> void tryFix(bool &, T &){}
-            bool pop(size_t *){ return false; }
-            void push(size_t){}
+            bool get(size_t *){ return false; }
+            void put(size_t){}
         };
         class DoLookup
         {
@@ -89,9 +73,9 @@ class WithParallelConsumers
             public:
             DoLookup(Itself *s) : subj(s){}
             template<typename T> void tryFix(bool &, T &);
-            bool pop(size_t *);
-            void push(size_t num)
-            { subj->workloadMap.push(num); }
+            bool get(size_t *);
+            void put(size_t num)
+            { subj->workloadMap.injectIf(num); }
         };
 
         typedef typename Bm::map
@@ -100,15 +84,17 @@ class WithParallelConsumers
                 Bm::pair<Bm::int_<detail::doLookup>, DoLookup>
             >::type Balancers;
 
-        typename boost::mpl::at<Balancers, Bm::int_<pushWayBalancerIdx>>::type pushWayBalancer;
-        typename boost::mpl::at<Balancers, Bm::int_<popWayBalancerIdx>>::type popWayBalancer;
+        typename boost::mpl::at<Balancers, Bm::int_<Cfg::pushWayBalancerIdx>>::type pushWayBalancer;
+        typename boost::mpl::at<Balancers, Bm::int_<Cfg::popWayBalancerIdx>>::type popWayBalancer;
 
         Subqueue *selectSubqueue(size_t *); // multiplexes input ('push') requests;
         Subqueue *getSubqueue();            // acquires the sub-queue when a consumer
                                             // is initializing;
-        Itself(size_t);
+        template<typename... Args>
+        Itself(size_t, Args &&...);
         void incrSize(){ Subqueue::Cfg::InfoCalls::incrSize(); }
         void decrSize(){ Subqueue::Cfg::InfoCalls::decrSize(); }
+        size_t subSize(size_t idx){ return subqueues[idx]->size(); }
     };
 
     typedef std::shared_ptr<Itself> QueuePtr;
@@ -116,7 +102,10 @@ class WithParallelConsumers
 
     public:
 
-    WithParallelConsumers(size_t s = 0) : itself(new Itself(s)){}
+    WithParallelConsumers() : itself(new Itself(0)){}
+    template<typename... Args>
+    WithParallelConsumers(size_t s, Args &&... args)
+        : itself(new Itself(s, std::forward<Args>(args)...)){}
     WithParallelConsumers(const WithParallelConsumers &) = delete;
     WithParallelConsumers(WithParallelConsumers &&q) : itself(std::move(q)){}
 
@@ -124,6 +113,7 @@ class WithParallelConsumers
     WithParallelConsumers &operator=(const WithParallelConsumers &) = delete;
 
     size_t size(){ return itself->size(); }
+    size_t subSize(size_t idx){ return itself->size(); }
 
     typedef typename Subqueue::Type Type;
 

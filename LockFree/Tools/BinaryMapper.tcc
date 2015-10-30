@@ -21,7 +21,6 @@
 
 #include<sstream>
 #include<stdexcept>
-#include "../detail/casIf.hpp"
 #include "../../Tools/GccBug47226Satellite.hpp"
 
 namespace TricksAndThings { namespace LockFree {
@@ -53,38 +52,105 @@ BitMap lowestBit(BitMap value)
     return retBit;
 }
 
+template<class BitMap>
+void BinaryMapper<BitMap>::inject(size_t num)
+{
+    BitMap newBit = int2ShiftedBit<BitMap>(num);
+    detail::casIf<>(bitMap, [=](BitMap &value)
+                            { return value |= newBit, true; });
+}
+
+template<class BitMap>
+bool BinaryMapper<BitMap>::eject(size_t *ret)
+{
+    return detail::casIf<>(bitMap, [=](BitMap &value)
+                                   {
+                                    if (value == 0) { return false; }
+                                    BitMap retBit = lowestBit(value);
+                                    *ret = shiftedBit2Int(retBit);
+                                    value &= ~retBit;
+                                    return true;
+                                   });
+}
+
+template<class BitMap>
+template<class C>
+bool BinaryMapper<BitMap>::getLowest(
+    size_t *ret,
+    const C &c)
+{
+    BitMap bmCopy = bitMap.load();
+
+    while (bmCopy)
+    {
+        BitMap retBit = lowestBit(bmCopy);
+        size_t retIdx = shiftedBit2Int(retBit);
+        if (c(retIdx))
+        {
+            *ret = retIdx;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 template<class BitMap, class Condition>
 template<typename... Args>
-bool BinaryMapper<BitMap, Condition>::lambdaAtPop(
+bool BinaryMapperCond<BitMap, Condition>::lambdaAtPop(
     size_t *ret,
     BitMap &value,
     Args &&... args)
 {
     GccBug47226Satellite();
-    if (bitMap == 0)
-    { return false; }
-
-    BitMap retBit = lowestBit(value);
-
-    *ret = shiftedBit2Int(retBit);
-
-    if (!matches(condition, false, *ret, std::forward<Args>(args)...))
+    while (value != 0)
     {
-        value &= ~retBit;
+        BitMap retBit = lowestBit(value);
+        size_t num = shiftedBit2Int(retBit);
+
+        if (condition(num, std::forward<Args>(args)...))
+        {
+            *ret = num;
+            return true;
+        }
+        else { value &= ~retBit; }
     }
 
-    return true;
+    return false;
 }
 
 template<class BitMap, class Condition>
 template<typename... Args>
-bool BinaryMapper<BitMap, Condition>::lambdaAtPush(
+bool BinaryMapperCond<BitMap, Condition>::lambdaAtPop0(
+    size_t *ret,
+    BitMap &value,
+    Args &&... args)
+{
+    GccBug47226Satellite();
+    for (BitMap inverted; (inverted = ~value) != 0; )
+    {
+        BitMap retBit = lowestBit(inverted);
+        size_t num = shiftedBit2Int(retBit);
+        if (!condition(num, std::forward<Args>(args)...))
+        {
+            *ret = num;
+            return true;
+        }
+        else { value |= retBit; }
+    }
+    return false;
+}
+
+template<class BitMap, class Condition>
+template<typename... Args>
+bool BinaryMapperCond<BitMap, Condition>::lambdaAtPush(
     size_t num,
     BitMap &value,
     Args &&... args)
 {
     GccBug47226Satellite();
-    if (!matches(condition, true, num, std::forward<Args>(args)...)) { return false; }
+    if (!condition(num, std::forward<Args>(args)...))
+    { return false; }
 
     value |= int2ShiftedBit<BitMap>(num);
 
@@ -93,48 +159,41 @@ bool BinaryMapper<BitMap, Condition>::lambdaAtPush(
 
 template<class BitMap, class Condition>
 template<class... Args>
-void BinaryMapper<BitMap, Condition>::push(
+void BinaryMapperCond<BitMap, Condition>::injectIf(
     size_t num,
     Args &&... args)
 {
-    detail::casIf<>(bitMap,
-                    std::bind(&BinaryMapper::lambdaAtPush<Args...>,
-                              this,
-                              num,
-                              std::placeholders::_1,
-                              std::forward<Args>(args)...));
+    itself.applyIf(std::bind(&BinaryMapperCond::lambdaAtPush<Args...>,
+                             this,
+                             num,
+                             std::placeholders::_1,
+                             std::forward<Args>(args)...));
 }
 
 template<class BitMap, class Condition>
 template<class... Args>
-bool BinaryMapper<BitMap, Condition>::pop(
+bool BinaryMapperCond<BitMap, Condition>::ejectIf(
     size_t *ret,
     Args &&... args)
 {
-    return detail::casIf<>(bitMap,
-                           std::bind(&BinaryMapper::lambdaAtPop<Args...>,
-                                     this,
-                                     ret,
-                                     std::placeholders::_1,
-                                     std::forward<Args>(args)...));
+    return itself.applyIf(std::bind(&BinaryMapperCond::lambdaAtPop<Args...>,
+                                    this,
+                                    ret,
+                                    std::placeholders::_1,
+                                    std::forward<Args>(args)...));
 }
 
 template<class BitMap, class Condition>
-bool BinaryMapper<BitMap, Condition>::getLowest1(
+template<typename... Args>
+bool BinaryMapperCond<BitMap, Condition>::eject0If(
     size_t *ret,
-    bool invert)
+    Args &&... args)
 {
-    BitMap retBit = bitMap.load();
-    if (invert) { retBit = ~retBit; }
-
-    if (retBit)
-    {
-        retBit = lowestBit(retBit);
-        *ret = shiftedBit2Int(retBit);
-        return true;
-    }
-
-    return false;
+    return itself.applyIf(std::bind(&BinaryMapperCond::lambdaAtPop0<Args...>,
+                                    this,
+                                    ret,
+                                    std::placeholders::_1,
+                                    std::forward<Args>(args)...));
 }
 
 } }

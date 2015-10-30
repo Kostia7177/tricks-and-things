@@ -25,8 +25,10 @@
 #include<functional>
 #include<math.h>
 #include "../../Tools/NullType.hpp"
+#include "../detail/casIf.hpp"
 
 namespace TricksAndThings { namespace LockFree {
+typedef uint64_t MappingField;
 
 template<class Container>
 class ContainerIsNearEmpty
@@ -50,47 +52,63 @@ template<class BitMap> size_t shiftedBit2Int(BitMap bit)
 
 template<class BitMap> BitMap lowestBit(BitMap);
 
-template<class BitMap, class Condition = NullType>
+template<class BitMap>
 class BinaryMapper
 {
     std::atomic<BitMap> bitMap;
+
+    public:
+
+    BinaryMapper() : bitMap(0){}
+
+    void inject(size_t);
+    bool eject(size_t *);
+
+    template<class C>
+    bool getLowest(size_t *, const C &);
+
+    bool contains(size_t num)
+    { return bitMap.load() & int2ShiftedBit<BitMap>(num); }
+
+    void erase(size_t num)
+    { bitMap.fetch_and(~int2ShiftedBit<BitMap>(num)); }
+
+    template<class F>
+    bool applyIf(F f)
+    { return detail::casIf<>(bitMap, f); }
+};
+
+template<class BitMap, class Condition>
+class BinaryMapperCond
+{
+    BinaryMapper<BitMap> itself;
     Condition condition;
 
     template<typename... Args>
-    static bool matches(const NullType &, bool isPush, size_t, Args &&...)
-    { return isPush; }
-
-    template<class C, typename... Args>
-    static bool matches(const C &c, bool, size_t idx, Args &&... args)
-    { return c(idx, std::forward<Args>(args)...); }
+    bool lambdaAtPop(size_t *, BitMap &, Args &&...);
 
     template<typename... Args>
-    bool lambdaAtPop(size_t *, BitMap &, Args &&...);
+    bool lambdaAtPop0(size_t *, BitMap &, Args &&...);
 
     template<typename... Args>
     bool lambdaAtPush(size_t, BitMap &, Args &&...);
 
     public:
 
-    BinaryMapper(Condition c = Condition())
-        : bitMap(0), condition(c){}
+    template<typename... Args>
+    BinaryMapperCond(Args &&... args)
+        : condition(std::forward<Args>(args)...){}
 
     template<class... Args>
-    void push(size_t, Args &&...);
+    void injectIf(size_t, Args &&...);
 
     template<class... Args>
-    bool pop(size_t *, Args &&...);
+    bool ejectIf(size_t *, Args &&...);
 
-    void erase(size_t num)
-    { bitMap.fetch_and(~int2ShiftedBit<BitMap>(num)); }
+    template<typename... Args>
+    bool eject0If(size_t *p, Args &&...);
 
-    bool getLowest1(size_t *, bool = false);
-
-    bool getLowest0(size_t *p)
-    { return getLowest1(p, true); }
-
-    bool contains(size_t num)
-    { return bitMap.load() & int2ShiftedBit<BitMap>(num); }
+    void erase(size_t num){ itself.erase(num); }
 };
 
 } }

@@ -20,13 +20,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../detail/SubqueueBase.hpp"
+#include "detail/SubqueueBase.hpp"
 #include "../Tools/ObjHolder.hpp"
-#include "../detail/Entry.hpp"
+#include "detail/Entry.hpp"
 #include "../detail/UsefulDefs.hpp"
 #include "Traits.hpp"
 #include "WithParallelConsumers.hpp"
-#include "../detail/ThreadSafeClientHub.hpp"
+#include "detail/ThreadSafeClientHub.hpp"
 
 namespace TricksAndThings { namespace LockFree
 {
@@ -101,11 +101,19 @@ class FewToSingle
 
 namespace Queues
 {
-template<typename T, class Cfg = Traits<>>
-using FewToLot = WithParallelConsumers<detail::FewToSingle<T, Cfg>>;
+template<typename T, class... Params>
+using FewToLot = WithParallelConsumers<detail::FewToSingle<T, Traits<Params...>>>;
 
-template<typename T, class Cfg = Traits<DefaultAllocatingStorage, Components::WithInfoCalls>>
-using FewToLot1 = WithParallelConsumers<detail::FewToSingle<T, Cfg>, pushWayLookup>;
+template<class... Params>
+using FewToLot1Traits =
+    Traits
+        <
+            UsePolicyTemplate<SubInfoCallsAre, Components::WithInfoCalls>,
+            UsePolicy<PushWayBalancerIs, Int2Type<pushWayLookup>>,
+            Params...
+        >;
+template<typename T, class... Params>
+using FewToLot1 = WithParallelConsumers<detail::FewToSingle<T, FewToLot1Traits<Params...>>>;
 }
 
 } }
