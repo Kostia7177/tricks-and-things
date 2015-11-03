@@ -53,11 +53,19 @@ class WithParallelConsumers
         SizeAtomic numOfConsumers;
         typename Subqueue::ClientHub clientHub;
 
+        typedef typename Cfg::MappingField MappingField;
         typedef typename Cfg::template WorkloadMapCondition<Subqueue> WorkloadMapCondition;
-        typedef typename Cfg::template WorkloadMap<WorkloadMapCondition> WorkloadMap;
+        typedef typename Cfg::template WorkloadMap<MappingField, WorkloadMapCondition> WorkloadMap;
         WorkloadMap workloadMap;
 
-        template<int, int = 0>struct WorkloadBalancer;
+        template<int outOfRange, int = 0>
+        struct WorkloadBalancer
+        {
+            static_assert(outOfRange == 0 || outOfRange == 1,
+                          "\n\n\tSwitch for 'pushWayBalancer' or 'popWayBalancer'\n\t"
+                          "cannot be other than 'false' or 'true'!\n");
+        };
+
         template<int unused>
         struct WorkloadBalancer<0, unused>
         {
@@ -82,7 +90,7 @@ class WithParallelConsumers
                 // first, look, wether there is any queue left by
                 // it's consumer
                 if (subj->exitedConsumersMap.getLowest(&idx, [&](size_t i)
-                            { return !subj->subqueues[i].empty(); }))
+                                                             { return !subj->subqueues[i].empty(); }))
                 {
                     fetched = subj->subqueues[idx].pop(p);
                 }

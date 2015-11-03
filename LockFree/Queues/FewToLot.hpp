@@ -97,23 +97,28 @@ class FewToSingle
     typedef ThreadSafeClientHub ClientHub;
 };
 
-} // <-- namespace detail
-
-namespace Queues
-{
-template<typename T, class... Params>
-using FewToLot = WithParallelConsumers<detail::FewToSingle<T, Traits<Params...>>>;
+namespace Q1 = Queues;
 
 template<class... Params>
 using FewToLot1Traits =
-    Traits
+    Q1::Traits
         <
-            UsePolicyTemplate<SubInfoCallsAre, Components::WithInfoCalls>,
-            UsePolicy<PushWayBalancerIs, Int2Type<true>>,
+            Q1::UsePolicy<Q1::SubInfoCallsAre, Template2Type<Q1::WithInfoCalls>>,
+            Q1::UsePolicy<Q1::PushWayBalancerIs, Int2Type<true>>,
             Params...
         >;
+
+} // <-- namespace detail
+namespace Queues
+{
+
 template<typename T, class... Params>
-using FewToLot1 = WithParallelConsumers<detail::FewToSingle<T, FewToLot1Traits<Params...>>>;
+using FewToLot =
+    WithParallelConsumers<detail::FewToSingle<T, Traits<Params...>>>;
+
+template<typename T, class... Params>
+using FewToLot1 =
+    WithParallelConsumers<detail::FewToSingle<T, detail::FewToLot1Traits<Params...>>>;
 }
 
 } }

@@ -28,7 +28,6 @@
 #include "../detail/casIf.hpp"
 
 namespace TricksAndThings { namespace LockFree {
-typedef uint64_t MappingField;
 
 template<class Container>
 class ContainerIsNearEmpty

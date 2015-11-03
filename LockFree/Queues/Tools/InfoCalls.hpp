@@ -3,7 +3,7 @@
 #include "../../detail/UsefulDefs.hpp"
 #include <type_traits>
 
-namespace TricksAndThings { namespace LockFree { namespace Queues { namespace Components {
+namespace TricksAndThings { namespace LockFree { namespace Queues {
 
 template<typename>
 class WithInfoCalls
@@ -12,8 +12,8 @@ class WithInfoCalls
     protected:
     void incrSize()     { ++ value; }
     void decrSize()     { -- value; }
-    WithInfoCalls() : value(0){}
-    ~WithInfoCalls(){}
+    WithInfoCalls() : value(0) {}
+    ~WithInfoCalls() {}
     public:
     bool empty() const  { return !size(); }
     size_t size() const { return value.load(); }
@@ -39,4 +39,4 @@ class NoInfoCalls
     size_t size() const { return fail(x); }
 };
 
-} } } }
+} } }

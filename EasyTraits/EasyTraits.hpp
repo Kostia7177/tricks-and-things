@@ -1,6 +1,7 @@
 #pragma once
 /*
     Trait it easy.
+
     Copyrignt (C) 2015 Konstantin U. Zozoulia
 
     candid.71 -at- mail -dot- ru
@@ -20,6 +21,7 @@
 */
 
 #include "detail.hpp"
+#include "../ParamPackManip/Params2TypesHierarchy.hpp"
 
 namespace TricksAndThings
 {
@@ -47,10 +49,10 @@ struct EasyTraits
     enum { selectorIdx = idx };
 };
 
+template<class... Policy>
+using DefaultSettingsBox = Params2TypesHierarchy<Policy...>;
+
 template<class Settings, template<class, class> class PolicyWrapper, class Policy>
 struct ReplaceDefaultSettingWithPolicy : public PolicyWrapper<Policy, typename Settings::Type> {};
-
-template<class Settings, template<template<typename> class, class> class PolicyWrapper, template<typename> class Policy>
-struct ReplaceDefaultSettingWithPolicyTemplate : public PolicyWrapper<Policy, typename Settings::Type> {};
 
 }

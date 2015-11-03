@@ -9,6 +9,7 @@
 namespace TricksAndThings { namespace LockFree
 {
 namespace detail {
+
 template<typename T, class C>
 class FewToLot2Subqueue
     : public SubqueueBase<C>
@@ -30,6 +31,7 @@ class FewToLot2Subqueue
         isReady = true;
         ++ *numOfConsumers;
     }
+
     bool ready()        { return isReady; }
     void push(Type &&p) { itself.push(std::forward<Type>(p)); }
     bool pop(Type &p)   { return itself.pop(p); }
@@ -38,19 +40,26 @@ class FewToLot2Subqueue
 
     typedef ThreadSafeClientHub ClientHub;
 };
+
+namespace Q2 = Queues;
+
+template<class... Params>
+using FewToLot2Traits =
+    Q2::Traits
+        <
+            Q2::UsePolicy<Q2::InfoCallsAre, Template2Type<Q2::WithInfoCalls>>,
+            Q2::UsePolicy<Q2::PushWayBalancerIs, Int2Type<true>>,
+            Q2::UsePolicy<Q2::PopWayBalancerIs, Int2Type<true>>,
+            Params...
+        >;
+
 }
 namespace Queues
 {
-template<class... Params>
-using FewToLot2Traits =
-    Traits
-        <
-            UsePolicyTemplate<InfoCallsAre, Components::WithInfoCalls>,
-            UsePolicy<PushWayBalancerIs, Int2Type<true>>,
-            UsePolicy<PopWayBalancerIs, Int2Type<true>>,
-            Params...
-        >;
+
 template<typename T, class... Params>
-using FewToLot2 = WithParallelConsumers<detail::FewToLot2Subqueue<T, FewToLot2Traits<Params...>>>;
+using FewToLot2 =
+    WithParallelConsumers<detail::FewToLot2Subqueue<T, detail::FewToLot2Traits<Params...>>>;
+
 }
 } }
