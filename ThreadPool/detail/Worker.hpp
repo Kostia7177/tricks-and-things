@@ -1,23 +1,11 @@
 #pragma once
 
 #include<thread>
-#include<boost/mpl/map.hpp>
-#include<boost/mpl/at.hpp>
+#include "../ShutdownStrategies.hpp"
 
-namespace TricksAndThings {
+namespace TricksAndThings { namespace detail {
 
-enum ShutdownStrategies
-{
-    gracefulShutdown,
-    shutdownImmediate
-};
-
-namespace detail
-{
-
-namespace Bm = boost::mpl;
-
-template<class TaskQueue, ShutdownStrategies shutdownPolicy, class Statistics>
+template<class TaskQueue, class ShutdownPolicy, class Statistics>
 class Worker
 {
     typename TaskQueue::ConsumerIdle idle;
@@ -27,14 +15,19 @@ class Worker
 
     std::thread thread;
 
-    struct GracefulShutdown
+    template<int, int = 0> struct AllWorktimeStrategies;
+
+    template<int unused>
+    struct AllWorktimeStrategies<gracefulShutdown, unused>
     {
         static bool goOn(bool taskNotEmpty, bool notExiting)
         { return taskNotEmpty || notExiting; }
         static bool taskIsAppliable(bool)
         { return true; }
     };
-    struct ShutdownImmediate
+
+    template<int unused>
+    struct AllWorktimeStrategies<shutdownImmediate, unused>
     {
         static bool goOn(bool, bool notExiting)
         { return notExiting; }
@@ -42,13 +35,7 @@ class Worker
         { return notExiting; }
     };
 
-    typedef typename Bm::map
-        <
-            Bm::pair<Bm::int_<gracefulShutdown>, GracefulShutdown>,
-            Bm::pair<Bm::int_<shutdownImmediate>, ShutdownImmediate>
-        >::type AllWorktimeStrategies;
-
-    typedef typename Bm::at<AllWorktimeStrategies, Bm::int_<shutdownPolicy>>::type WorktimeStrategies;
+    typedef AllWorktimeStrategies<ShutdownPolicy::value> WorktimeStrategies;
 
     public:
 

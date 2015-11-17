@@ -108,7 +108,7 @@ class SingleToSingle
 
 namespace Queues
 {
-template<typename T, class Cfg = Traits<>> using SingleToMany = WithParallelConsumers<detail::SingleToSingle<T, Cfg>>;
+template<typename T, class Cfg = QueueTraits<>> using SingleToMany = WithParallelConsumers<detail::SingleToSingle<T, Cfg>>;
 }
 
 } }

@@ -28,7 +28,7 @@
 namespace TricksAndThings { namespace LockFree { namespace Queues
 {
 
-template<typename T, class Cfg = Traits<>>
+template<typename T, class Cfg = QueueTraits<>>
 class GeneralPurpose
     : public Cfg::InfoCalls
 {

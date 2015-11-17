@@ -101,10 +101,10 @@ namespace Q1 = Queues;
 
 template<class... Params>
 using FewToLot1Traits =
-    Q1::Traits
+    Q1::QueueTraits
         <
-            Q1::UsePolicy<Q1::SubInfoCallsAre, Template2Type<Q1::WithInfoCalls>>,
-            Q1::UsePolicy<Q1::PushWayBalancerIs, Int2Type<true>>,
+            Q1::UseQueuePolicy<Q1::SubInfoCallsAre, Template2Type<Q1::WithInfoCalls>>,
+            Q1::UseQueuePolicy<Q1::PushWayBalancerIs, Int2Type<true>>,
             Params...
         >;
 
@@ -114,7 +114,11 @@ namespace Queues
 
 template<typename T, class... Params>
 using FewToLot =
-    WithParallelConsumers<detail::FewToSingle<T, Traits<Params...>>>;
+    WithParallelConsumers<detail::FewToSingle<T, QueueTraits<Params...>>>;
+
+template<typename T, class Cfg = QueueTraits<>>
+using FewToLotPreconfigured =
+    WithParallelConsumers<detail::FewToSingle<T, Cfg>>;
 
 template<typename T, class... Params>
 using FewToLot1 =

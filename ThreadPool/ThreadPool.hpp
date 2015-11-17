@@ -20,33 +20,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../LockFree/Tools/DefaultAllocatingStorage.hpp"
-#include "../LockFree/Queues/Tools/InfoCalls.hpp"
-#include "../LockFree/Queues/Traits.hpp"
-#include "../LockFree/Queues/FewToLot.hpp"
-#include "detail/Manager.hpp"
-#include "detail/Worker.hpp"
-#include "detail/Statistics.hpp"
+#include "Traits.hpp"
 #include<vector>
 #include<memory>
 
 namespace TricksAndThings
 {
-namespace detail {
-namespace Lfq = LockFree::Queues;
-template<class T>
-using Queue = Lfq::FewToLot
-                <
-                    T,
-                    Lfq::UsePolicyTemplate<Lfq::InfoCallsAre, Lfq::Components::WithInfoCalls>
-                >;
-}
 
-template<ShutdownStrategies shutdownPolicy = gracefulShutdown,
-         class Statistics = detail::NullStatistics,
-         template<class> class Q = detail::Queue>
+template<class... Params>
 class ThreadPool
 {
+    typedef ThreadPoolTraits<Params...> Cfg;
     struct TaskIfc
     {
         virtual void doIt() = 0;
@@ -62,13 +46,13 @@ class ThreadPool
         Task(F f) : payload(f){}
         virtual void doIt() { payload(); }
     };
-    typedef Q<std::shared_ptr<TaskIfc>> TaskQueue;
+    typedef typename Cfg::template Queue<std::shared_ptr<TaskIfc>> TaskQueue;
 
     TaskQueue tasks;
 
-    detail::Manager<TaskQueue> manager;
+    typename Cfg::template Manager<TaskQueue> manager;
 
-    typedef detail::Worker<TaskQueue, shutdownPolicy, Statistics> Worker;
+    typedef typename Cfg::template Worker<TaskQueue, Int2Type<Cfg::shutdownPolicy>, typename Cfg::Statistics> Worker;
     typedef std::unique_ptr<Worker> WorkerPtr;
     std::vector<WorkerPtr> workers;
 

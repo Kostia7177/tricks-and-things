@@ -13,7 +13,7 @@ class Manager
 
     std::mutex lock;
     std::condition_variable check;
-    std::atomic<size_t> numOfWorkersAwaiting;
+    std::atomic<size_t> awaitings;
 
     TaskQueue &queue;
 
@@ -21,13 +21,13 @@ class Manager
 
     Manager(size_t n, TaskQueue &q)
         : numOfWorkers(0),
-          numOfWorkersAwaiting(0),
+          awaitings(0),
           queue(q){}
 
     template<class W> void workerStopped(const W &);
 
     template<class W> void workerResumed(const W &)
-    { -- numOfWorkersAwaiting; }
+    { -- awaitings; }
 
     void onNewWorker() { numOfWorkers ++ ; }
 

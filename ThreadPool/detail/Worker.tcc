@@ -1,9 +1,9 @@
 
 namespace TricksAndThings { namespace detail {
 
-template<class TaskQueue, ShutdownStrategies shutdownPolicy, class Statistics>
+template<class TaskQueue, class ShutdownPolicy, class Statistics>
 template<class Manager>
-Worker<TaskQueue, shutdownPolicy, Statistics>::Worker(
+Worker<TaskQueue, ShutdownPolicy, Statistics>::Worker(
     TaskQueue &tasks,
     Manager &manager)
     : threadStarted(false),
@@ -32,7 +32,6 @@ Worker<TaskQueue, shutdownPolicy, Statistics>::Worker(
                         idle.until([&]
                                    { return queuePtr->pop(taskPtr)
                                             || workCompleted; });
-
                         manager.workerResumed(*this);
                     }
                 }
@@ -43,14 +42,14 @@ Worker<TaskQueue, shutdownPolicy, Statistics>::Worker(
     while (!threadStarted);
 }
 
-template<class TaskQueue, ShutdownStrategies shutdownPolicy, class Statistics>
-Worker<TaskQueue, shutdownPolicy, Statistics>::~Worker()
+template<class TaskQueue, class ShutdownPolicy, class Statistics>
+Worker<TaskQueue, ShutdownPolicy, Statistics>::~Worker()
 {
     if (thread.joinable()) { thread.join(); }
 }
 
-template<class TaskQueue, ShutdownStrategies shutdownPolicy, class Statistics>
-void Worker<TaskQueue, shutdownPolicy, Statistics>::completeWork()
+template<class TaskQueue, class ShutdownPolicy, class Statistics>
+void Worker<TaskQueue, ShutdownPolicy, Statistics>::completeWork()
 {
     workCompleted = true;
     idle.kick();

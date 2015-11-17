@@ -22,8 +22,6 @@
 
 #include "../detail/UsefulDefs.hpp"
 #include "../Tools/BinaryMapper.hpp"
-#include<boost/mpl/map.hpp>
-#include<boost/mpl/at.hpp>
 #include<thread>
 #include<mutex> // never mind, it's really still lock-free,
 #include<condition_variable>    // yeah, don't worry;
@@ -31,8 +29,6 @@
 namespace TricksAndThings { namespace LockFree
 {
 namespace Queues {
-
-namespace Bm = boost::mpl;
 
 template<class Subqueue>
 class WithParallelConsumers

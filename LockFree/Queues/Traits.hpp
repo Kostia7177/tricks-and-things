@@ -27,11 +27,11 @@ typedef DefaultSettingsBox
     > DefaultSettings;
 
 template<class... Params>
-using Traits =
+using QueueTraits =
     EasyTraits<DefaultSettings, 0, Params...>;
 
 template<template<class, class> class PolicyWrapper, class Policy>
-using UsePolicy =
+using UseQueuePolicy =
     ReplaceDefaultSettingWithPolicy<DefaultSettings, PolicyWrapper, Policy>;
 
 } } }

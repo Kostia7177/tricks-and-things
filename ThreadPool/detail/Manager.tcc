@@ -5,7 +5,7 @@ template<class TaskQueue>
 template<class Worker>
 void Manager<TaskQueue>::workerStopped(const Worker &worker)
 {
-    ++ numOfWorkersAwaiting;
+    ++ awaitings;
     check.notify_one();
 }
 
@@ -13,7 +13,7 @@ template<class TaskQueue>
 void Manager<TaskQueue>::wait(size_t threshold)
 {
     std::unique_lock<std::mutex> locker(lock);
-    while ((numOfWorkers - numOfWorkersAwaiting.load() + queue.size()) > threshold)
+    while ((numOfWorkers - awaitings.load() + queue.size()) > threshold)
     {
         check.wait(locker);
     }
