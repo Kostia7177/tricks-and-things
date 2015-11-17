@@ -191,8 +191,13 @@ class WithParallelConsumers
         ConsumerIdle() : awaiting(false){}
         template<class F> void until(F f);
         void kick(){ check.notify_one(); }
+        bool isAwaiting(){ return awaiting; }
         void interrupt()
-        { if (awaiting) { kick(); } }
+        {
+            if (!awaiting) { return; }
+            std::unique_lock<std::mutex> locker(lock);
+            if (awaiting) { kick(); }
+        }
     };
 };
 

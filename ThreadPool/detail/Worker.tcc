@@ -30,9 +30,15 @@ Worker<TaskQueue, ShutdownPolicy, Statistics>::Worker(
                         statistics.stopped();
 
                         idle.until([&]
-                                   { return queuePtr->pop(taskPtr)
-                                            || workCompleted; });
-                        manager.workerResumed(*this);
+                                   {
+                                    manager.workerResumed(*this);
+                                    if (queuePtr->pop(taskPtr)
+                                        || workCompleted)
+                                    { return true; }
+                                    manager.workerStopped(*this);
+
+                                    return false;
+                                   });
                     }
                 }
                 while (WorktimeStrategies
