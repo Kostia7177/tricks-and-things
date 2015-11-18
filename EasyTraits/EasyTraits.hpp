@@ -63,7 +63,7 @@ using DefaultSettingsBox = Params2TypesHierarchy<Policy...>;    // <------------
 //                                                                              |
 // At your code it will be looking like                                         |
 //                                                                              |
-//    template DefaultSettingsBox                                               |
+//    typedef DefaultSettingsBox                                                |
 //              <                                                               |
 //                  ParameterOneIs<FirstParam>,                                 |
 //                  SecondParamIs<AnotherParam>,                                |
@@ -91,6 +91,7 @@ template<class Settings,    // -- a box with your default settings -------------
          class T6 = detail::DefaultCfg<Settings>,               //                              |
          class T7 = detail::DefaultCfg<Settings>,                           //                  |
          class T8 = detail::DefaultCfg<Settings>>       //                                      |
+         // up to 8 default parameters can be replaced with custom per once;                    |
 struct EasyTraits   //                                                                          |
     : detail::BaseUniquizer<T1, 1, idx>,    //                                                  |
       detail::BaseUniquizer<T2, 2, idx>,        //                                              |
