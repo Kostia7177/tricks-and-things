@@ -26,8 +26,8 @@
 //          equip your computer with bike pedals -
 //          to make scrolling compiler's error
 //          messages faster and more healthy.
-// On other sides,
-//          all things are fine.
+// On other side,
+//          everything is fine.
 //
 // For the impatients - usage see at
 //
@@ -50,14 +50,14 @@ namespace TricksAndThings
 template<class... Policy>
 using DefaultSettingsBox = Params2TypesHierarchy<Policy...>;    // <------------+
 // Parameter values must be wrapped by                                          |
-// template structures of the following                                         |
+// template structures by the following                                         |
 // pattern:                                                                     |
 //                                                                              |
 //  template<class P, class Base = NullType> // from ../Tools/NullType.hpp      |
 //  struct AnyParameterIs : virtual Base                                        |
 //  { typedef P AnyParameter; };                                                |
 //                                                                              |
-// Numeric (integer) constants and templates must be surrounded by Int2Type     |
+// Numeric (integer) constants and templates must be enclosed to Int2Type       |
 // and Template2Type additional wrappers.                                       |
 // (from ../Tools/Int2Type.hpp and ../Tools/Template2Type.hpp)                  |
 //                                                                              |
@@ -67,6 +67,7 @@ using DefaultSettingsBox = Params2TypesHierarchy<Policy...>;    // <------------
 //              <                                                               |
 //                  ParameterOneIs<FirstParam>,                                 |
 //                  SecondParamIs<AnotherParam>,                                |
+//                  // somewhere defined enum { valueOfParam = 42 };            |
 //                  ThirdNumericParameterIs<Int2Type<valueOfParam>>,            |
 //                  TheFouthOneIs<Template2Type<SomeTemplateNotAType>>          |
 //                  // ...etc                                                   |
@@ -140,6 +141,6 @@ struct ReplaceDefaultSettingWithPolicy : public PolicyWrapper<Policy, typename S
 //                                                                                                                       |Server.cpp
 //                                                                                                                       |Client.cpp
 //
-// ...I do think it really looks pretty well.
+// ...I do think it really looks pretty well. Do ya?..
 
 }
