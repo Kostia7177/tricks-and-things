@@ -87,6 +87,7 @@ WithParallelConsumers<Subqueue>::Itself::Itself(
     std::for_each(subqueues, subqueues + n, [&](Subqueue &subqueue)
                                             { subqueue.init(&numOfConsumers); });
 }
+
 template<class Subqueue>
 WithParallelConsumers<Subqueue> &WithParallelConsumers<Subqueue>::operator=(WithParallelConsumers &&p)
 {
@@ -166,16 +167,6 @@ void WithParallelConsumers<Subqueue>::ProviderSideProxy::push(Type &&p)
         queue->incrSize();
     }
     else { throw std::runtime_error("No initialized sub-queue found!"); }
-}
-
-template<class Subqueue>
-template<class F>
-void WithParallelConsumers<Subqueue>::ConsumerIdle::until(F f)
-{
-    std::unique_lock<std::mutex> locker(lock);
-    awaiting = true;
-    check.wait(locker, f);
-    awaiting = false;
 }
 
 } } }

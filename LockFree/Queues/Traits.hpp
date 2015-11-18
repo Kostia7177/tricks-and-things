@@ -8,6 +8,7 @@
 #include "../../Tools/Template2Type.hpp"
 #include "../../Tools/NullType.hpp"
 #include "../Tools/BinaryMapper.hpp"
+#include "detail/ConsumerIdle.hpp"
 
 namespace TricksAndThings { namespace LockFree { namespace Queues
 {
@@ -23,7 +24,8 @@ typedef DefaultSettingsBox
         MappingFieldIs<uint64_t>,
         WorkloadMapConditionIs<Template2Type<ContainerIsNearEmpty>>,
         PushWayBalancerIs<Int2Type<false>>,
-        PopWayBalancerIs<Int2Type<false>>
+        PopWayBalancerIs<Int2Type<false>>,
+        ConsumerIdleIs<TricksAndThings::detail::ConsumerIdle>
     > DefaultSettings;
 
 template<class... Params>

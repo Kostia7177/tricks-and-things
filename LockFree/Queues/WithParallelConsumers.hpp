@@ -22,9 +22,8 @@
 
 #include "../detail/UsefulDefs.hpp"
 #include "../Tools/BinaryMapper.hpp"
+#include<memory>
 #include<thread>
-#include<mutex> // never mind, it's really still lock-free,
-#include<condition_variable>    // yeah, don't worry;
 
 namespace TricksAndThings { namespace LockFree
 {
@@ -36,7 +35,9 @@ class WithParallelConsumers
     // dedicated to it's consumer;
     // holds (and hides) this pack and multiplexes input
     // requests ('push') calls between the sub-queues;
+    public:
     typedef typename Subqueue::Cfg Cfg;
+    private:
     //
     // queue instance is to be shared by a number of consumers via
     // pointer-like proxies, so, the instance's body itself must
@@ -124,6 +125,7 @@ class WithParallelConsumers
                                             // is initializing;
         template<typename... Args>
         Itself(size_t, Args &&...);
+
         void incrSize(){ Subqueue::Cfg::InfoCalls::incrSize(); }
         void decrSize(){ Subqueue::Cfg::InfoCalls::decrSize(); }
         size_t subSize(size_t idx){ return subqueues[idx]->size(); }
@@ -135,9 +137,11 @@ class WithParallelConsumers
     public:
 
     WithParallelConsumers() : itself(new Itself(0)){}
+
     template<typename... Args>
     WithParallelConsumers(size_t s, Args &&... args)
         : itself(new Itself(s, std::forward<Args>(args)...)){}
+
     WithParallelConsumers(const WithParallelConsumers &) = delete;
     WithParallelConsumers(WithParallelConsumers &&q) : itself(std::move(q)){}
 
@@ -148,6 +152,7 @@ class WithParallelConsumers
     size_t subSize(size_t idx){ return itself->size(); }
 
     typedef typename Subqueue::Type Type;
+    typedef typename Cfg::ConsumerIdle ConsumerIdle;
 
     // both pop and push are available through
     // the smart pointer-like proxies only;
@@ -180,24 +185,6 @@ class WithParallelConsumers
         void push(Type &&);
         template<class F>
         void apply(F f) { f(idx); }
-    };
-
-    class ConsumerIdle
-    {
-        std::mutex lock;
-        std::condition_variable check;
-        std::atomic<bool> awaiting;
-        public:
-        ConsumerIdle() : awaiting(false){}
-        template<class F> void until(F f);
-        void kick(){ check.notify_one(); }
-        bool isAwaiting(){ return awaiting; }
-        void interrupt()
-        {
-            if (!awaiting) { return; }
-            std::unique_lock<std::mutex> locker(lock);
-            if (awaiting) { kick(); }
-        }
     };
 };
 

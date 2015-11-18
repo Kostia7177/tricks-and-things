@@ -49,4 +49,9 @@ struct PushWayBalancerIs : virtual Base
 template<class N, class Base = NullType>
 struct PopWayBalancerIs : virtual Base
 { enum { popWayBalancer = N::value }; };
+
+template<class C, class Base = NullType>
+struct ConsumerIdleIs : virtual Base
+{ typedef C ConsumerIdle; };
+
 } } }
