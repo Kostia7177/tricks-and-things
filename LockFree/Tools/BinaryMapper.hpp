@@ -51,6 +51,9 @@ template<class BitMap> size_t shiftedBit2Int(BitMap bit)
 
 template<class BitMap> BitMap lowestBit(BitMap);
 
+template<class BitMap, class C, typename... Args>
+bool ejectBit(size_t *, BitMap &, const C &, Args &&...);
+
 template<class BitMap>
 class BinaryMapper
 {
@@ -82,9 +85,6 @@ class BinaryMapperCond
 {
     BinaryMapper<BitMap> itself;
     Condition condition;
-
-    template<typename... Args>
-    bool lambdaAtPop(size_t *, BitMap &, Args &&...);
 
     template<typename... Args>
     bool lambdaAtPop0(size_t *, BitMap &, Args &&...);

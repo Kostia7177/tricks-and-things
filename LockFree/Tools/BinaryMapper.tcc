@@ -52,6 +52,29 @@ BitMap lowestBit(BitMap value)
     return retBit;
 }
 
+template<class BitMap, class C, typename... Args>
+bool ejectBit(
+    size_t *ret,
+    BitMap &value,
+    const C &c,
+    Args &&... args)
+{
+    while (value != 0)
+    {
+        BitMap retBit = lowestBit(value);
+        size_t num = shiftedBit2Int(retBit);
+
+        if (c(num, std::forward<Args>(args)...))
+        {
+            *ret = num;
+            return true;
+        }
+        else { value &= ~retBit; }
+    }
+
+    return false;
+}
+
 template<class BitMap>
 void BinaryMapper<BitMap>::inject(size_t num)
 {
@@ -81,42 +104,7 @@ bool BinaryMapper<BitMap>::getLowest(
 {
     BitMap bmCopy = bitMap.load();
 
-    while (bmCopy)
-    {
-        BitMap retBit = lowestBit(bmCopy);
-        size_t retIdx = shiftedBit2Int(retBit);
-        if (c(retIdx))
-        {
-            *ret = retIdx;
-            return true;
-        }
-    }
-
-    return false;
-}
-
-template<class BitMap, class Condition>
-template<typename... Args>
-bool BinaryMapperCond<BitMap, Condition>::lambdaAtPop(
-    size_t *ret,
-    BitMap &value,
-    Args &&... args)
-{
-    GccBug47226Satellite();
-    while (value != 0)
-    {
-        BitMap retBit = lowestBit(value);
-        size_t num = shiftedBit2Int(retBit);
-
-        if (condition(num, std::forward<Args>(args)...))
-        {
-            *ret = num;
-            return true;
-        }
-        else { value &= ~retBit; }
-    }
-
-    return false;
+    return ejectBit(ret, bmCopy, c);
 }
 
 template<class BitMap, class Condition>
@@ -138,6 +126,7 @@ bool BinaryMapperCond<BitMap, Condition>::lambdaAtPop0(
         }
         else { value |= retBit; }
     }
+
     return false;
 }
 
@@ -176,10 +165,11 @@ bool BinaryMapperCond<BitMap, Condition>::ejectIf(
     size_t *ret,
     Args &&... args)
 {
-    return itself.applyIf(std::bind(&BinaryMapperCond::lambdaAtPop<Args...>,
-                                    this,
+    GccBug47226Satellite(); // replace bind with lambda;
+    return itself.applyIf(std::bind(&ejectBit<BitMap, Condition, Args...>,
                                     ret,
                                     std::placeholders::_1,
+                                    condition,
                                     std::forward<Args>(args)...));
 }
 
