@@ -69,7 +69,7 @@ bool ejectBit(
             *ret = num;
             return true;
         }
-        else { value &= ~retBit; }
+        value &= ~retBit;
     }
 
     return false;

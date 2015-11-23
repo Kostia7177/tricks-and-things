@@ -9,6 +9,7 @@
 #include "../../Tools/NullType.hpp"
 #include "../Tools/BinaryMapper.hpp"
 #include "detail/ConsumerIdle.hpp"
+#include "detail/SubqueueIsEmpty.hpp"
 
 namespace TricksAndThings { namespace LockFree { namespace Queues
 {
@@ -21,6 +22,7 @@ typedef DefaultSettingsBox
         PageSizeIs<Int2Type<4096>>,
         NumOfConsumersLimitIs<Int2Type<128>>,
         WorkloadMapIs<Template2Type<BinaryMapperCond>>,
+        ExitedConsumersMapIs<Template2Type<BinaryMapper>>,
         MappingFieldIs<uint64_t>,
         WorkloadMapConditionIs<Template2Type<ContainerIsNearEmpty>>,
         PushWayBalancerIs<Int2Type<false>>,

@@ -19,7 +19,9 @@ class FewToLot2Subqueue
     typedef C Cfg;
     private:
 
-    Queues::GeneralPurpose<T, Cfg> itself;
+    struct SubCfg : Cfg
+    { typedef typename Cfg::SubInfoCalls InfoCalls; };
+    Queues::GeneralPurpose<T, SubCfg> itself;
     std::atomic<bool> isReady;
 
     public:
@@ -41,44 +43,29 @@ class FewToLot2Subqueue
     typedef ThreadSafeClientHub ClientHub;
 };
 
-namespace Q2 = Queues;
-
-template<class... Params>
-using FewToLot15Traits =
-    Q2::QueueTraits
-        <
-            Q2::UseQueuePolicy<Q2::InfoCallsAre, Template2Type<Q2::WithInfoCalls>>,
-            Q2::UseQueuePolicy<Q2::PopWayBalancerIs, Int2Type<true>>,
-            Params...
-        >;
-
-template<class... Params>
-using FewToLot2Traits =
-    FewToLot15Traits
-        <
-            Q2::UseQueuePolicy<Q2::PushWayBalancerIs, Int2Type<true>>,
-            Params...
-        >;
-
 }
+
 namespace Queues
 {
 
-template<typename T, class... Params>
-using FewToLot15 =
-    WithParallelConsumers<detail::FewToLot2Subqueue<T, detail::FewToLot15Traits<Params...>>>;
-
-template<typename T, class Cfg = detail::FewToLot15Traits<>>
-using FewToLot15Preconfigured =
-    WithParallelConsumers<detail::FewToLot2Subqueue<T, Cfg>>;
+template<class... Params>
+using FewToLot2Traits =
+    QueueTraits
+        <
+            UseQueuePolicy<SubInfoCallsAre, Template2Type<WithInfoCalls>>,
+            UseQueuePolicy<PopWayBalancerIs, Int2Type<true>>,
+            UseQueuePolicy<PushWayBalancerIs, Int2Type<true>>,
+            Params...
+        >;
 
 template<typename T, class... Params>
 using FewToLot2 =
-    WithParallelConsumers<detail::FewToLot2Subqueue<T, detail::FewToLot2Traits<Params...>>>;
+    WithParallelConsumers<detail::FewToLot2Subqueue<T, FewToLot2Traits<Params...>>>;
 
-template<typename T, class Cfg = detail::FewToLot2Traits<>>
+template<typename T, class Cfg>
 using FewToLot2Preconfigured =
     WithParallelConsumers<detail::FewToLot2Subqueue<T, Cfg>>;
 
 }
+
 } }

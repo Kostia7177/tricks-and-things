@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../Tools/NullType.hpp"
 #include<cstddef>
 
 namespace TricksAndThings { namespace LockFree { namespace Queues
@@ -53,5 +54,10 @@ struct PopWayBalancerIs : virtual Base
 template<class C, class Base = NullType>
 struct ConsumerIdleIs : virtual Base
 { typedef C ConsumerIdle; };
+
+template<class M, class Base = NullType>
+struct ExitedConsumersMapIs : virtual Base
+{ template<class Field>
+  using ExitedConsumersMap = typename M::template Template<Field>; };
 
 } } }

@@ -21,13 +21,11 @@
 */
 
 #include "../detail/UsefulDefs.hpp"
-#include "../Tools/BinaryMapper.hpp"
 #include<memory>
 #include<thread>
 
-namespace TricksAndThings { namespace LockFree
+namespace TricksAndThings { namespace LockFree { namespace Queues
 {
-namespace Queues {
 
 template<class Subqueue>
 class WithParallelConsumers
@@ -118,7 +116,7 @@ class WithParallelConsumers
         WorkloadBalancer<Cfg::pushWayBalancer> pushWayBalancer;
         WorkloadBalancer<Cfg::popWayBalancer> popWayBalancer;
 
-        BinaryMapper<MappingField> exitedConsumersMap;
+        typename Cfg::template ExitedConsumersMap<MappingField> exitedConsumersMap;
 
         Subqueue *selectSubqueue(size_t *); // multiplexes input ('push') requests;
         Subqueue *getSubqueue();            // acquires the sub-queue when a consumer
