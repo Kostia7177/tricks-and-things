@@ -53,6 +53,11 @@ template<class C, class Base = NullType>
 struct ConsumerIdleIs : virtual Base
 { typedef C ConsumerIdle; };
 
+template<class P, class Base = NullType>
+struct PushOverriderIs : virtual Base
+{ template<class Subqueue>
+  using PushOverrider = typename P::template Template<Subqueue>; };
+
 template<class M, class Base = NullType>
 struct ExitedConsumersMapIs : virtual Base
 { template<class Field>

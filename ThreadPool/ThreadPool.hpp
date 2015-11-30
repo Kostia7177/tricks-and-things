@@ -20,6 +20,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "detail/RecurserIfc.hpp"
 #include "Traits.hpp"
 #include<vector>
 #include<memory>
@@ -31,24 +32,35 @@ template<class... Params>
 class ThreadPool
 {
     typedef ThreadPoolTraits<Params...> Cfg;
+    public:
+    typedef detail::RecurserPtr RecurserPtr;
+    private:
+    typedef detail::NoRecurser NoRecurser;
+    typedef detail::WithRecurser WithRecurser;
     struct TaskIfc
     {
-        virtual void doIt() = 0;
         virtual ~TaskIfc(){}
+        virtual void doIt(RecurserPtr &&) = 0;
     };
+    public:
+    typedef typename Cfg::template Queue<std::shared_ptr<TaskIfc>> TaskQueue;
+    private:
+
+    TaskQueue tasks;
 
     template<class F>
     class Task
         : public TaskIfc
     {
         F payload;
-        public:
-        Task(F f) : payload(f){}
-        virtual void doIt() { payload(); }
-    };
-    typedef typename Cfg::template Queue<std::shared_ptr<TaskIfc>> TaskQueue;
 
-    TaskQueue tasks;
+        public:
+
+        Task(F &&f) : payload(std::forward<F>(f)){}
+
+        virtual void doIt(RecurserPtr &&recurser)
+        { payload(std::move(recurser)); }
+    };
 
     typename Cfg::template Manager<TaskQueue> manager;
 
@@ -56,8 +68,21 @@ class ThreadPool
     typedef std::unique_ptr<Worker> WorkerPtr;
     std::vector<WorkerPtr> workers;
 
+    typename Cfg::template WorkerCondition<decltype(workers)> workerCondition;
+
     template<class F, class... Args>
     void applyOnWorkers(F, Args &&...);
+
+    typedef typename TaskQueue::ProviderSideProxy ProviderSideProxy;
+    template<class F, typename... Args>
+    void pushIntoQueue(ProviderSideProxy &, F &&, Args &&...);
+
+    template<class F, typename... Args>
+    void scheduleCore(F &&, RecurserPtr &&, Args &&...);
+    template<class F, typename... Args>
+    void scheduleSw(NoRecurser, ProviderSideProxy &, RecurserPtr &&,F &&, Args &&...);
+    template<class F, typename... Args>
+    void scheduleSw(WithRecurser, ProviderSideProxy &, RecurserPtr &&, F &&, Args &&...);
 
     public:
 
@@ -66,6 +91,8 @@ class ThreadPool
 
     template<class F, class... Args>
     void schedule(F, Args &&...);
+    template<class F, typename... Args>
+    void schedule(F, RecurserPtr &&, Args &&...);
 
     size_t size() const { return workers.size(); }
 

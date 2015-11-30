@@ -1,5 +1,7 @@
+#include "IsRecurserInside.hpp"
 
-namespace TricksAndThings { namespace detail {
+namespace TricksAndThings { namespace detail
+{
 
 template<class TaskQueue, class ShutdownPolicy, class Statistics>
 template<class Manager>
@@ -21,7 +23,9 @@ Worker<TaskQueue, ShutdownPolicy, Statistics>::Worker(
                         && taskPtr.get())
                     {
                         statistics.store(queuePtr);
-                        taskPtr->doIt();
+                        runTaskSw(IsRecurserInside<TaskQueue>(),
+                                  taskPtr,
+                                  queuePtr);
                     }
                     taskPtr.reset();
                     if (!queuePtr->pop(taskPtr))
@@ -35,6 +39,7 @@ Worker<TaskQueue, ShutdownPolicy, Statistics>::Worker(
                                     if (queuePtr->pop(taskPtr)
                                         || workCompleted)
                                     { return true; }
+
                                     manager.workerStopped(*this);
 
                                     return false;

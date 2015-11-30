@@ -27,7 +27,8 @@ typedef DefaultSettingsBox
         WorkloadMapConditionIs<ContainerIsNearEmpty<>>,
         PushWayBalancerIs<Int2Type<false>>,
         PopWayBalancerIs<Int2Type<false>>,
-        ConsumerIdleIs<TricksAndThings::detail::ConsumerIdle>
+        ConsumerIdleIs<TricksAndThings::detail::ConsumerIdle>,
+        PushOverriderIs<Template2Type<detail::SubqueueIsEmpty>>
     > DefaultSettings;
 
 template<class... Params>
