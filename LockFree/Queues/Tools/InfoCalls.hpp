@@ -3,7 +3,8 @@
 #include "../../detail/UsefulDefs.hpp"
 #include <type_traits>
 
-namespace TricksAndThings { namespace LockFree { namespace Queues {
+namespace TricksAndThings { namespace LockFree { namespace Queues
+{
 
 template<typename>
 class WithInfoCalls

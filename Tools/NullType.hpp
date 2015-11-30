@@ -20,7 +20,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-namespace TricksAndThings {
+namespace TricksAndThings
+{
 
 struct NullType {}; // project's core. no jokes.
 

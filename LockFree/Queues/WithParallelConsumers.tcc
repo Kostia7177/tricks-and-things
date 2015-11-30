@@ -72,8 +72,9 @@ template<typename... Args>
 WithParallelConsumers<Subqueue>::Itself::Itself(
     size_t n,
     Args &&... args)
-    : numOfConsumers(0),
-      workloadMap(subqueues, std::forward<Args>(args)...),
+    : numOfSubqueues(sizeof(subqueues)),
+      numOfConsumers(0),
+      workloadMap(std::forward<Args>(args)...),
       pushWayBalancer(this),
       popWayBalancer(this)
 {

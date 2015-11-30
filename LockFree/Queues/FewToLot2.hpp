@@ -8,7 +8,8 @@
 
 namespace TricksAndThings { namespace LockFree
 {
-namespace detail {
+namespace detail
+{
 
 template<typename T, class C>
 class FewToLot2Subqueue
@@ -22,6 +23,7 @@ class FewToLot2Subqueue
     struct SubCfg : Cfg
     { typedef typename Cfg::SubInfoCalls InfoCalls; };
     Queues::GeneralPurpose<T, SubCfg> itself;
+
     std::atomic<bool> isReady;
 
     public:
@@ -43,7 +45,7 @@ class FewToLot2Subqueue
     typedef ThreadSafeClientHub ClientHub;
 };
 
-}
+} // <-- namespace detail
 
 namespace Queues
 {

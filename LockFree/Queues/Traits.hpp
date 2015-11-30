@@ -24,7 +24,7 @@ typedef DefaultSettingsBox
         WorkloadMapIs<Template2Type<BinaryMapperCond>>,
         ExitedConsumersMapIs<Template2Type<BinaryMapper>>,
         MappingFieldIs<uint64_t>,
-        WorkloadMapConditionIs<Template2Type<ContainerIsNearEmpty>>,
+        WorkloadMapConditionIs<ContainerIsNearEmpty<>>,
         PushWayBalancerIs<Int2Type<false>>,
         PopWayBalancerIs<Int2Type<false>>,
         ConsumerIdleIs<TricksAndThings::detail::ConsumerIdle>

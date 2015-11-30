@@ -3,7 +3,8 @@
 #include<thread>
 #include "../ShutdownStrategies.hpp"
 
-namespace TricksAndThings { namespace detail {
+namespace TricksAndThings { namespace detail
+{
 
 template<class TaskQueue, class ShutdownPolicy, class Statistics>
 class Worker
@@ -43,6 +44,7 @@ class Worker
     ~Worker();
 
     void newDataAppeared()  { idle.interrupt(); }
+    bool busy()             { return !idle.isAwaiting(); }
     void completeWork();
     void clearStatistics()  { statistics.clear(); }
     

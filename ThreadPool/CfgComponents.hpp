@@ -2,7 +2,8 @@
 
 #include "../Tools/NullType.hpp"
 
-namespace  TricksAndThings {
+namespace TricksAndThings
+{
 
 template<class S, class Base = NullType>
 struct StatisticsAre : virtual Base
@@ -30,5 +31,10 @@ template<class M, class Base = NullType>
 struct ManagerIs : virtual Base
 { template<typename... T>
   using Manager = typename M::template Template<T...>; };
+
+template<class C, class Base = NullType>
+struct WorkerConditionIs : virtual Base
+{ template<class W>
+  using WorkerCondition = typename C::template Template<W>; };
 
 }

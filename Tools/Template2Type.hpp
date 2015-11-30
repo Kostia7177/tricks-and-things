@@ -1,6 +1,6 @@
 #pragma once
 
-namespace TricksAndThings {
+namespace TricksAndThings{
 
 template<template<typename...> class Arg>
 struct Template2Type

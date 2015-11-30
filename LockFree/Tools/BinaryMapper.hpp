@@ -20,27 +20,29 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../../Tools/NullType.hpp"
+#include "../detail/casIf.hpp"
 #include<atomic>
 #include<cstddef>
 #include<functional>
 #include<math.h>
-#include "../../Tools/NullType.hpp"
-#include "../detail/casIf.hpp"
 
-namespace TricksAndThings { namespace LockFree {
-
-template<class Container>
-class ContainerIsNearEmpty
+namespace TricksAndThings { namespace LockFree
 {
-    Container *containers;
-    size_t treshold;
 
-    public:
+template<size_t t = 1>
+struct ContainerIsNearEmpty
+{
+    static const size_t treshold = t;
 
-    ContainerIsNearEmpty(Container *c, size_t t = 1)
-        : treshold(t), containers(c){}
+    template<typename... Args>
+    ContainerIsNearEmpty(Args &&...){}
 
-    bool operator()(size_t idx) const
+    template<class Container, typename... Args>
+    bool operator()(
+        size_t idx,
+        const Container *containers,
+        Args &&...) const
     { return containers[idx].size() <= treshold; }
 };
 
@@ -94,9 +96,15 @@ class BinaryMapperCond
 
     public:
 
+    BinaryMapperCond(){}
+
     template<typename... Args>
     BinaryMapperCond(Args &&... args)
         : condition(std::forward<Args>(args)...){}
+
+    template<typename... Args>
+    void setCondition(Args &&... args)
+    { condition = Condition(std::forward<Args>(args)...); }
 
     template<class... Args>
     void injectIf(size_t, Args &&...);
@@ -107,7 +115,8 @@ class BinaryMapperCond
     template<typename... Args>
     bool eject0If(size_t *p, Args &&...);
 
-    void erase(size_t num){ itself.erase(num); }
+    void erase(size_t num)
+    { itself.erase(num); }
 };
 
 } }

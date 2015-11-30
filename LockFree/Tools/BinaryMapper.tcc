@@ -23,7 +23,8 @@
 #include<stdexcept>
 #include "../../Tools/GccBug47226Satellite.hpp"
 
-namespace TricksAndThings { namespace LockFree {
+namespace TricksAndThings { namespace LockFree
+{
 
 template<class BitMap>
 BitMap int2ShiftedBit(size_t num)

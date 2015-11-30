@@ -37,11 +37,9 @@ template<class F, class Base = NullType>
 struct MappingFieldIs : virtual Base
 { typedef F MappingField; };
 
-template<class MappingCondition, class Base = NullType>
+template<class C, class Base = NullType>
 struct WorkloadMapConditionIs : virtual Base
-{ template<class Subqueue>
-  using WorkloadMapCondition =
-      typename MappingCondition::template Template<Subqueue>; };
+{ typedef C WorkloadMapCondition; };
 
 template<class N, class Base = NullType>
 struct PushWayBalancerIs : virtual Base

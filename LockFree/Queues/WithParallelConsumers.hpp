@@ -45,11 +45,12 @@ class WithParallelConsumers
         : Cfg::InfoCalls
     {
         Subqueue subqueues[Subqueue::Cfg::numOfConsumersLimit]; // sub-queue pack itself;
+        const size_t numOfSubqueues;
         SizeAtomic numOfConsumers;
         typename Subqueue::ClientHub clientHub;
 
         typedef typename Cfg::MappingField MappingField;
-        typedef typename Cfg::template WorkloadMapCondition<Subqueue> WorkloadMapCondition;
+        typedef typename Cfg::WorkloadMapCondition WorkloadMapCondition;
         typedef typename Cfg::template WorkloadMap<MappingField, WorkloadMapCondition> WorkloadMap;
         WorkloadMap workloadMap;
 
@@ -74,10 +75,12 @@ class WithParallelConsumers
         class WorkloadBalancer<1, unused>
         {
             Itself *subj;
+            Subqueue *subqueues;
 
             public:
 
-            WorkloadBalancer(Itself *s) : subj(s){}
+            WorkloadBalancer(Itself *s)
+                : subj(s), subqueues(subj->subqueues){}
 
             template<typename T> void tryFix(bool &fetched, T &p)
             {
@@ -91,7 +94,9 @@ class WithParallelConsumers
                 }
 
                 if (!fetched
-                        && subj->workloadMap.eject0If(&idx))
+                    && subj->workloadMap.eject0If(&idx,
+                                                  subqueues,
+                                                  subj->numOfSubqueues))
                 {
                     fetched = subj->subqueues[idx].pop(p);
                     subj->pushWayBalancer.put(idx);
@@ -102,7 +107,10 @@ class WithParallelConsumers
             {
                 do
                 {
-                    if (!subj->workloadMap.ejectIf(idxRet)) { return false; }
+                    if (!subj->workloadMap.ejectIf(idxRet,
+                                                   subqueues,
+                                                   subj->numOfSubqueues))
+                    { return false; }
                 }
                 while (subj->exitedConsumersMap.contains(*idxRet));
 
@@ -110,7 +118,9 @@ class WithParallelConsumers
             }
 
             void put(size_t num)
-            { subj->workloadMap.injectIf(num); }
+            { subj->workloadMap.injectIf(num,
+                                         subqueues,
+                                         subj->numOfSubqueues); }
         };
 
         WorkloadBalancer<Cfg::pushWayBalancer> pushWayBalancer;
@@ -124,9 +134,9 @@ class WithParallelConsumers
         template<typename... Args>
         Itself(size_t, Args &&...);
 
-        void incrSize(){ Subqueue::Cfg::InfoCalls::incrSize(); }
-        void decrSize(){ Subqueue::Cfg::InfoCalls::decrSize(); }
-        size_t subSize(size_t idx){ return subqueues[idx]->size(); }
+        void incrSize()             { Subqueue::Cfg::InfoCalls::incrSize(); }
+        void decrSize()             { Subqueue::Cfg::InfoCalls::decrSize(); }
+        size_t subSize(size_t idx)  { return subqueues[idx]->size(); }
     };
 
     typedef std::shared_ptr<Itself> QueuePtr;
@@ -146,8 +156,11 @@ class WithParallelConsumers
     WithParallelConsumers &operator=(WithParallelConsumers &&);
     WithParallelConsumers &operator=(const WithParallelConsumers &) = delete;
 
-    size_t size(){ return itself->size(); }
-    size_t subSize(size_t idx){ return itself->size(); }
+    size_t size() const { return itself->size(); }
+
+    template<typename... Args>
+    void setWorkloadMapCondition(Args &&... args)
+    { itself->workloadMap.setCondition(std::forward<Args>(args)...); }
 
     typedef typename Subqueue::Type Type;
     typedef typename Cfg::ConsumerIdle ConsumerIdle;
@@ -167,7 +180,7 @@ class WithParallelConsumers
         ConsumerSideProxy(WithParallelConsumers *);
         ~ConsumerSideProxy();
         ConsumerSideProxy *operator->() { return this; }
-        size_t subSize(){ return subqueue->size(); }
+        size_t subSize() const          { return subqueue->size(); }
         bool pop(Type &);
     };
 
