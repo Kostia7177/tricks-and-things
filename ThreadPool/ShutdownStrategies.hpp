@@ -1,6 +1,7 @@
 #pragma once
 
-namespace TricksAndThings {
+namespace TricksAndThings
+{
 
 enum
 {

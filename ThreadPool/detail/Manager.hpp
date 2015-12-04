@@ -4,7 +4,8 @@
 #include<mutex>
 #include<condition_variable>
 
-namespace TricksAndThings { namespace detail {
+namespace TricksAndThings { namespace detail
+{
 
 template<class TaskQueue>
 class Manager

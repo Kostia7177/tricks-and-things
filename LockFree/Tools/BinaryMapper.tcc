@@ -21,6 +21,7 @@
 
 #include<sstream>
 #include<stdexcept>
+#include "../detail/withRangeChecker.hpp"
 #include "../../Tools/GccBug47226Satellite.hpp"
 
 namespace TricksAndThings { namespace LockFree
@@ -64,6 +65,11 @@ bool ejectBit(
     {
         BitMap retBit = lowestBit(value);
         size_t num = shiftedBit2Int(retBit);
+        if (!detail::checkRange(c,
+                                num,
+                                Int2Type<sizeof(detail::withRangeCheckerInside<C>(0))
+                                         == sizeof(One)>()))
+        { return false; }
 
         if (c(num, std::forward<Args>(args)...))
         {
@@ -120,6 +126,12 @@ bool BinaryMapperCond<BitMap, Condition>::lambdaAtPop0(
     {
         BitMap retBit = lowestBit(inverted);
         size_t num = shiftedBit2Int(retBit);
+        if (!detail::checkRange(condition,
+                                num,
+                                Int2Type<sizeof(detail::withRangeCheckerInside<Condition>(0))
+                                         == sizeof(One)>()))
+        { return false; }
+
         if (!condition(num, std::forward<Args>(args)...))
         {
             *ret = num;
@@ -139,7 +151,11 @@ bool BinaryMapperCond<BitMap, Condition>::lambdaAtPush(
     Args &&... args)
 {
     GccBug47226Satellite();
-    if (!condition(num, std::forward<Args>(args)...))
+    if (!detail::checkRange(condition,
+                            num,
+                            Int2Type<sizeof(detail::withRangeCheckerInside<Condition>(0))
+                                     == sizeof(One)>())
+        || !condition(num, std::forward<Args>(args)...))
     { return false; }
 
     value |= int2ShiftedBit<BitMap>(num);

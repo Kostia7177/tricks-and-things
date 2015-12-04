@@ -45,6 +45,7 @@ class Worker
 
     void newDataAppeared()  { idle.interrupt(); }
     bool busy()             { return !idle.isAwaiting(); }
+    void join();
     void completeWork();
     void clearStatistics()  { statistics.clear(); }
     

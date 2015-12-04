@@ -22,7 +22,8 @@
 
 #include<memory>
 
-namespace TricksAndThings { namespace LockFree {
+namespace TricksAndThings { namespace LockFree
+{
 
 template<class P>
 struct DefaultAllocatingStorage

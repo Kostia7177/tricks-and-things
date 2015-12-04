@@ -56,13 +56,15 @@ class ThreadPool
     typedef std::unique_ptr<Worker> WorkerPtr;
     std::vector<WorkerPtr> workers;
 
+    typename Cfg::template WorkerCondition<decltype(workers)> workerCondition;
+
     template<class F, class... Args>
     void applyOnWorkers(F, Args &&...);
 
     public:
 
     ThreadPool(size_t);
-    ~ThreadPool()       { applyOnWorkers(&Worker::completeWork); }
+    ~ThreadPool();
 
     template<class F, class... Args>
     void schedule(F, Args &&...);

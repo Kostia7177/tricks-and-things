@@ -1,5 +1,6 @@
 
-namespace TricksAndThings { namespace detail {
+namespace TricksAndThings { namespace detail
+{
 
 template<class TaskQueue, class ShutdownPolicy, class Statistics>
 template<class Manager>
@@ -50,6 +51,10 @@ Worker<TaskQueue, ShutdownPolicy, Statistics>::Worker(
 
 template<class TaskQueue, class ShutdownPolicy, class Statistics>
 Worker<TaskQueue, ShutdownPolicy, Statistics>::~Worker()
+{ join(); }
+
+template<class TaskQueue, class ShutdownPolicy, class Statistics>
+void Worker<TaskQueue, ShutdownPolicy, Statistics>::join()
 {
     if (thread.joinable()) { thread.join(); }
 }

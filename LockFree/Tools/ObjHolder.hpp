@@ -23,7 +23,8 @@
 #include "../detail/UsefulDefs.hpp"
 #include<utility>
 
-namespace TricksAndThings { namespace LockFree {
+namespace TricksAndThings { namespace LockFree
+{
 
 template<class T, class Storage>
 class ObjHolder

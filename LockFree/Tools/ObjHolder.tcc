@@ -20,7 +20,8 @@
 */
 #include "../detail/casIf.hpp"
 
-namespace TricksAndThings { namespace LockFree {
+namespace TricksAndThings { namespace LockFree
+{
 
 template<class T, class Storage>
 ObjHolder<T, Storage>::Ptr::~Ptr()

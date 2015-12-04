@@ -20,17 +20,38 @@
 */
 #include<functional>
 
-namespace TricksAndThings {
+namespace TricksAndThings
+{
+
+template<class... Cfg>
+template<class F, class... Args>
+void ThreadPool<Cfg...>::applyOnWorkers(
+    F f,
+    Args &&...args)
+{
+    for (WorkerPtr &worker : workers)
+    {// worker->f(args...); - that's what here is in fact;
+        (worker.get()->*f)(std::forward<Args>(args)...);
+    }
+}
 
 template<class... Cfg>
 ThreadPool<Cfg...>::ThreadPool(size_t n)
     : tasks(n),
-      manager(n, tasks)
+      manager(n, tasks),
+      workerCondition(workers)
 {
+    tasks.setWorkloadMapCondition(&workerCondition);
     for (size_t idx = 0; idx < n; ++ idx)
     {
         workers.emplace_back(new Worker(tasks, manager));
     }
+}
+template<class... Cfg>
+ThreadPool<Cfg...>::~ThreadPool()
+{
+    applyOnWorkers(&Worker::completeWork);
+    applyOnWorkers(&Worker::join);
 }
 
 template<class... Cfg>
@@ -47,18 +68,6 @@ void ThreadPool<Cfg...>::schedule(
     queuePtr->push(std::make_shared<Task2Push>(wrappedF));
 
     queuePtr->apply([&](size_t idx) { workers[idx]->newDataAppeared(); });
-}
-
-template<class... Cfg>
-template<class F, class... Args>
-void ThreadPool<Cfg...>::applyOnWorkers(
-    F f,
-    Args &&...args)
-{
-    for (WorkerPtr &worker : workers)
-    {// worker->f(args...); - that's what here is in fact;
-        (worker.get()->*f)(std::forward<Args>(args)...);
-    }
 }
 
 }

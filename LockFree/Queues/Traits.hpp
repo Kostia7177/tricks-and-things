@@ -9,7 +9,6 @@
 #include "../../Tools/NullType.hpp"
 #include "../Tools/BinaryMapper.hpp"
 #include "detail/ConsumerIdle.hpp"
-#include "detail/SubqueueIsEmpty.hpp"
 
 namespace TricksAndThings { namespace LockFree { namespace Queues
 {
