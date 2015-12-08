@@ -29,9 +29,11 @@ typedef DefaultSettingsBox
         ConsumerIdleIs<TricksAndThings::detail::ConsumerIdle>
     > DefaultSettings;
 
+struct QueuesDomain {};
+
 template<class... Params>
 using QueueTraits =
-    EasyTraits<DefaultSettings, 0, Params...>;
+    EasyTraits<DefaultSettings, QueuesDomain, Params...>;
 
 template<template<class, class> class PolicyWrapper, class Policy>
 using UseQueuePolicy =

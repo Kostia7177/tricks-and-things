@@ -37,6 +37,10 @@
 //                                                                                      ..../examples/<all>/Proto.hpp
 //                                                                                                          |Server.cpp
 //                                                                                                          |Client.cpp
+// The main idea have been taken from
+// 'C++ Templates - The Complete Guide' book
+// by David Vandevoorde and Nicolai M. Josuttis (http://www.josuttis.com/tmplbook/)
+// Part III, chapter 16.1;
 //
 #include "detail.hpp"
 #include "../ParamPackManip/Params2TypesHierarchy.hpp"
@@ -76,38 +80,34 @@ using DefaultSettingsBox = Params2TypesHierarchy<Policy...>;    // <------------
 // Configuration itself - this is a thing, that will be a template              |
 // parameter of your tunable class.                                             |
 template<class Settings,    // -- a box with your default settings -------------+
-         int idx,           // -- domain index, usable if you want to
-                            //    'group up' your parameters to a sub-sets,
-                            //    marked by this index;
-                            //    must be unique;
-                            //    in the very most cases will be a simple 0;
-                            //    or simple 1; or any other you like;
-         // -- an order-independent sequence of the parameters, wrapped by the 'replacers' -----+
-         //    that will replace the parameter values from a default set;                       |
-         class T1 = detail::DefaultCfg<Settings>,   //                                          |
-         class T2 = detail::DefaultCfg<Settings>,       //                                      |
-         class T3 = detail::DefaultCfg<Settings>,                   //                          |
-         class T4 = detail::DefaultCfg<Settings>,           //                                  |
-         class T5 = detail::DefaultCfg<Settings>,   //                                          |
-         class T6 = detail::DefaultCfg<Settings>,               //                              |
-         class T7 = detail::DefaultCfg<Settings>,                           //                  |
-         class T8 = detail::DefaultCfg<Settings>>       //                                      |
-         // up to 8 default parameters can be replaced with custom per once;                    |
-struct EasyTraits   //                                                                          |
-    : detail::BaseUniquizer<T1, 1, idx>,    //                                                  |
-      detail::BaseUniquizer<T2, 2, idx>,        //                                              |
-      detail::BaseUniquizer<T3, 3, idx>,                    //                                  |
-      detail::BaseUniquizer<T4, 4, idx>,                            //                          |
-      detail::BaseUniquizer<T5, 5, idx>,            //                                          |
-      detail::BaseUniquizer<T6, 6, idx>,                        //                              |
-      detail::BaseUniquizer<T7, 7, idx>,    //                                                  |
-      detail::BaseUniquizer<T8, 8, idx>                 //                                      |
-{                                               //                                              |
-    enum { selectorIdx = idx }; //                                                              |
-};  //                                                                                          |
-//                                                                                              |
-// Replacer for a policy that is to be used instead of default one.                             |
-template<class Settings, template<class, class> class PolicyWrapper, class Policy>  // <--------+
+         class D,           // -- domain feature, usable if you want to
+                            //    pass something specific into your traits
+                            //    box (such a trait of this traits group),
+                            //    or if you want to 'group up' your parameters
+                            //    to any sub-sets, marked by this feature;
+                            //    in this case must be unique;
+                            //    in the very most cases will be a simple
+                            //    struct SomeDomain {};
+                            //    or even my precious detail::NullType,
+                            //    if you really shure that you will never
+                            //    use it;
+         class... WrappedParams>    // -- an order-independent sequence of the
+                                    //    parameters, wrapped by the 'policy replacers' ----+
+                                    //    that will replace the parameter values from       |
+                                    //    a default policy set;                             |
+struct EasyTraits   //                                                                      |
+    : detail::DefaultCfg<Settings>,     //                                                  |
+      detail::BaseNumerator<D,  //                                                          |
+                            typename detail             //                                  |
+                                     ::CreateIdxSequence<sizeof...(WrappedParams)>  //      |
+                                     ::Type,                //                              |
+                            WrappedParams...>   //                                          |
+{                                               //                                          |
+    typedef D Domain;   //                                                                  |
+};  //                                                                                      |
+//                                                                                          |
+// Replacer for a policy that is to be used instead of default one.                         |
+template<class Settings, template<class, class> class PolicyWrapper, class Policy>  // <----+
 struct ReplaceDefaultSettingWithPolicy : public PolicyWrapper<Policy, typename Settings::Type> {};
 //
 // It will be a nice idea to define an alias for

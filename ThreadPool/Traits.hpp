@@ -37,9 +37,10 @@ typedef DefaultSettingsBox
         WorkerConditionIs<Template2Type<WorkerNotBusy>>
     > ThreadPoolDefaultSettings;
 
+struct ThreadPoolDomain {};
 template<class... Params>
 using ThreadPoolTraits =
-    EasyTraits<ThreadPoolDefaultSettings, 0, Params...>;
+    EasyTraits<ThreadPoolDefaultSettings, ThreadPoolDomain, Params...>;
 
 template<template<class, class> class PolicyWrapper, class Policy>
 using UseThreadPoolPolicy =
