@@ -31,7 +31,6 @@ typedef DefaultSettingsBox
         StatisticsAre<detail::NullStatistics>,
         QueueIs<Template2Type<detail::DefaultThreadPoolQueue>>,
         ShutdownPolicyIs<Int2Type<gracefulShutdown>>,
-        CheckArg1Type<Int2Type<true>>,
         WorkerIs<Template2Type<detail::Worker>>,
         ManagerIs<Template2Type<detail::Manager>>,
         WorkerConditionIs<Template2Type<WorkerNotBusy>>

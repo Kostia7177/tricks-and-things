@@ -21,8 +21,10 @@
 */
 
 #include "Traits.hpp"
+#include "detail/PromisesOpt.hpp"
 #include<vector>
 #include<memory>
+#include<future>
 
 namespace TricksAndThings
 {
@@ -37,37 +39,53 @@ class ThreadPool
         virtual ~TaskIfc(){}
     };
 
-    template<class F>
+    template<class F, class P>
     class Task
         : public TaskIfc
     {
         F payload;
+        P promiseWrapper;
+
         public:
-        Task(F f) : payload(f){}
-        virtual void doIt() { payload(); }
+
+        Task(F f, P &&p) : payload(f), promiseWrapper(std::forward<P>(p)){}
+
+        virtual void doIt()
+        { promiseWrapper(payload); }
     };
+
     typedef typename Cfg::template Queue<std::shared_ptr<TaskIfc>> TaskQueue;
 
     TaskQueue tasks;
 
     typename Cfg::template Manager<TaskQueue> manager;
 
-    typedef typename Cfg::template Worker<TaskQueue, Int2Type<Cfg::shutdownPolicy>, typename Cfg::Statistics> Worker;
+    typedef typename Cfg::template Worker<TaskQueue,
+                                          Int2Type<Cfg::shutdownPolicy>,
+                                          typename Cfg::Statistics> Worker;
+
     typedef std::unique_ptr<Worker> WorkerPtr;
     std::vector<WorkerPtr> workers;
 
     typename Cfg::template WorkerCondition<decltype(workers)> workerCondition;
 
-    template<class F, class... Args>
+    template<class F, typename... Args>
     void applyOnWorkers(F, Args &&...);
+
+    template<class P, class F, typename... Args>
+    void scheduleSw(P &&, F, Args &&...);
 
     public:
 
     ThreadPool(size_t);
     ~ThreadPool();
 
-    template<class F, class... Args>
-    void schedule(F, Args &&...);
+    template<class F, typename... Args>
+    void schedule(F f, Args &&... args)
+    { scheduleSw(detail::NoPromise(), f, std::forward<Args>(args)...); }
+
+    template<class F, typename... Args>
+    std::future<typename std::result_of<F(Args...)>::type> submit(F, Args &&...);
 
     size_t size() const { return workers.size(); }
 

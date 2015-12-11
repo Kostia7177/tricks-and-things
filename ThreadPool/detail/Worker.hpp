@@ -40,8 +40,9 @@ class Worker
 
     public:
 
-    template<class Manager> Worker(TaskQueue &, Manager &);
-    ~Worker();
+    template<class Manager>
+    Worker(TaskQueue &, Manager &);
+    ~Worker()               { join(); }
 
     void newDataAppeared()  { idle.interrupt(); }
     bool busy()             { return !idle.isAwaiting(); }

@@ -18,10 +18,6 @@ template<class P, class Base = NullType>
 struct ShutdownPolicyIs : virtual Base
 { enum { shutdownPolicy = P::value }; };
 
-template<class C, class Base = NullType>
-struct CheckArg1Type : virtual Base
-{ enum { checkArg1Type = C::value }; };
-
 template<class W, class Base = NullType>
 struct WorkerIs : virtual Base
 { template<typename... T>

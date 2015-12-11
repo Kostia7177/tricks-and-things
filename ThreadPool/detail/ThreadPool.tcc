@@ -24,7 +24,7 @@ namespace TricksAndThings
 {
 
 template<class... Cfg>
-template<class F, class... Args>
+template<class F, typename... Args>
 void ThreadPool<Cfg...>::applyOnWorkers(
     F f,
     Args &&...args)
@@ -55,8 +55,9 @@ ThreadPool<Cfg...>::~ThreadPool()
 }
 
 template<class... Cfg>
-template<class F, class... Args>
-void ThreadPool<Cfg...>::schedule(
+template<class P, class F, typename... Args>
+void ThreadPool<Cfg...>::scheduleSw(
+    P &&p,
     F f, 
     Args &&...args)
 {
@@ -64,10 +65,24 @@ void ThreadPool<Cfg...>::schedule(
 
     auto wrappedF = std::bind(f, std::forward<Args>(args)...);
 
-    typedef Task<decltype(wrappedF)> Task2Push;
-    queuePtr->push(std::make_shared<Task2Push>(wrappedF));
+    typedef Task<decltype(wrappedF), P> Task2Push;
+    queuePtr->push(std::make_shared<Task2Push>(wrappedF,
+                                               std::forward<P>(p)));
 
     queuePtr->apply([&](size_t idx) { workers[idx]->newDataAppeared(); });
+}
+template<class... Cfg>
+template<class F, typename... Args>
+std::future<typename std::result_of<F(Args...)>::type> ThreadPool<Cfg...>::submit(
+    F f,
+    Args &&... args)
+{
+    typedef typename std::result_of<F(Args...)>::type Ret;
+    detail::WithPromise<Ret> promiseWrapper;
+    std::future<Ret> ret(promiseWrapper.getFuture());
+    scheduleSw(std::move(promiseWrapper), f, std::forward<Args>(args)...);
+
+    return ret;
 }
 
 }
