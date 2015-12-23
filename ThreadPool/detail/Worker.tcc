@@ -14,6 +14,7 @@ Worker<TaskQueue, ShutdownPolicy, Statistics>::Worker(
                 manager.onNewWorker();
                 typename TaskQueue::ConsumerSideProxy queuePtr = &tasks;
                 threadStarted = true;
+
                 typename TaskQueue::Type taskPtr;
                 do
                 {
@@ -24,7 +25,9 @@ Worker<TaskQueue, ShutdownPolicy, Statistics>::Worker(
                         statistics.store(queuePtr);
                         taskPtr->doIt();
                     }
+
                     taskPtr.reset();
+
                     if (!queuePtr->pop(taskPtr))
                     {
                         manager.workerStopped(*this);

@@ -20,10 +20,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Traits.hpp"
-#include "detail/Entry.hpp"
-#include "../Tools/ObjHolder.hpp"
 #include "../detail/UsefulDefs.hpp"
+#include "../Tools/ObjHolder.hpp"
+#include "detail/Entry.hpp"
+#include "Tools/Traits.hpp"
 
 namespace TricksAndThings { namespace LockFree { namespace Queues
 {
@@ -81,4 +81,4 @@ class GeneralPurpose
 };
 
 } } }
-#include "GeneralPurpose.tcc"
+#include "detail/GeneralPurpose.tcc"

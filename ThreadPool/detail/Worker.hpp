@@ -1,7 +1,7 @@
 #pragma once
 
 #include<thread>
-#include "../ShutdownStrategies.hpp"
+#include "../Tools/ShutdownStrategies.hpp"
 
 namespace TricksAndThings { namespace detail
 {
@@ -23,6 +23,7 @@ class Worker
     {
         static bool goOn(bool taskNotEmpty, bool notExiting)
         { return taskNotEmpty || notExiting; }
+
         static bool taskIsAppliable(bool)
         { return true; }
     };
@@ -32,6 +33,7 @@ class Worker
     {
         static bool goOn(bool, bool notExiting)
         { return notExiting; }
+
         static bool taskIsAppliable(bool notExiting)
         { return notExiting; }
     };
@@ -42,6 +44,7 @@ class Worker
 
     template<class Manager>
     Worker(TaskQueue &, Manager &);
+
     ~Worker()               { join(); }
 
     void newDataAppeared()  { idle.interrupt(); }

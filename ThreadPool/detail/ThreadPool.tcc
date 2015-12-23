@@ -36,25 +36,6 @@ void ThreadPool<Cfg...>::applyOnWorkers(
 }
 
 template<class... Cfg>
-ThreadPool<Cfg...>::ThreadPool(size_t n)
-    : tasks(n),
-      manager(n, tasks),
-      workerCondition(workers)
-{
-    tasks.setWorkloadMapCondition(&workerCondition);
-    for (size_t idx = 0; idx < n; ++ idx)
-    {
-        workers.emplace_back(new Worker(tasks, manager));
-    }
-}
-template<class... Cfg>
-ThreadPool<Cfg...>::~ThreadPool()
-{
-    applyOnWorkers(&Worker::completeWork);
-    applyOnWorkers(&Worker::join);
-}
-
-template<class... Cfg>
 template<class P, class F, typename... Args>
 void ThreadPool<Cfg...>::scheduleSw(
     P &&p,
@@ -71,6 +52,27 @@ void ThreadPool<Cfg...>::scheduleSw(
 
     queuePtr->apply([&](size_t idx) { workers[idx]->newDataAppeared(); });
 }
+
+template<class... Cfg>
+ThreadPool<Cfg...>::ThreadPool(size_t n)
+    : tasks(n),
+      manager(n, tasks),
+      workerCondition(workers)
+{
+    tasks.setWorkloadMapCondition(&workerCondition);
+    for (size_t idx = 0; idx < n; ++ idx)
+    {
+        workers.emplace_back(new Worker(tasks, manager));
+    }
+}
+
+template<class... Cfg>
+ThreadPool<Cfg...>::~ThreadPool()
+{
+    applyOnWorkers(&Worker::completeWork);
+    applyOnWorkers(&Worker::join);
+}
+
 template<class... Cfg>
 template<class F, typename... Args>
 std::future<typename std::result_of<F(Args...)>::type> ThreadPool<Cfg...>::submit(
@@ -80,6 +82,7 @@ std::future<typename std::result_of<F(Args...)>::type> ThreadPool<Cfg...>::submi
     typedef typename std::result_of<F(Args...)>::type Ret;
     detail::WithPromise<Ret> promiseWrapper;
     std::future<Ret> ret(promiseWrapper.getFuture());
+
     scheduleSw(std::move(promiseWrapper), f, std::forward<Args>(args)...);
 
     return ret;

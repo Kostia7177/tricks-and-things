@@ -1,6 +1,7 @@
 #include<cstring>
 
-namespace TricksAndThings { namespace detail {
+namespace TricksAndThings
+{
 
 inline std::ostream &operator<<(
     std::ostream &s,
@@ -27,4 +28,4 @@ void SimpleStatistics::clear()
     sumSize = 0;
 }
 
-} }
+}

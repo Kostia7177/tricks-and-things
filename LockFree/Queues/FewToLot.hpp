@@ -20,13 +20,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "detail/SubqueueBase.hpp"
-#include "../Tools/ObjHolder.hpp"
-#include "detail/Entry.hpp"
 #include "../detail/UsefulDefs.hpp"
-#include "Traits.hpp"
+#include "../Tools/ObjHolder.hpp"
 #include "WithParallelConsumers.hpp"
+#include "detail/SubqueueBase.hpp"
+#include "detail/Entry.hpp"
 #include "detail/ThreadSafeClientHub.hpp"
+#include "Tools/Traits.hpp"
 
 namespace TricksAndThings { namespace LockFree
 {
@@ -106,8 +106,8 @@ template<class... Params>
 using FewToLot1Traits =
     QueueTraits
         <
-            UseQueuePolicy<SubInfoCallsAre, Template2Type<WithInfoCalls>>,
-            UseQueuePolicy<PushWayBalancerIs, Int2Type<true>>,
+            UseQueuePolicy<WithSubInfoCalls, Int2Type<true>>,
+            UseQueuePolicy<WithPushWayBalancer, Int2Type<true>>,
             Params...
         >;
 
@@ -126,4 +126,4 @@ using FewToLot1 =
 }
 
 } }
-#include "FewToLot.tcc"
+#include "detail/FewToLot.tcc"

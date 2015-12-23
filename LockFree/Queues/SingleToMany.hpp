@@ -21,9 +21,9 @@
 */
 
 #include "../detail/UsefulDefs.hpp"
-#include "detail/SubqueueBase.hpp"
 #include "WithParallelConsumers.hpp"
-#include "Traits.hpp"
+#include "detail/SubqueueBase.hpp"
+#include "Tools/Traits.hpp"
 
 namespace TricksAndThings { namespace LockFree
 {
@@ -112,4 +112,4 @@ template<typename T, class Cfg = QueueTraits<>> using SingleToMany = WithParalle
 }
 
 } }
-#include "SingleToMany.tcc"
+#include "detail/SingleToMany.tcc"

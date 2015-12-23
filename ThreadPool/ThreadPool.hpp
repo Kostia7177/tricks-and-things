@@ -20,8 +20,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Traits.hpp"
 #include "detail/PromisesOpt.hpp"
+#include "detail/WorkerStat.hpp"
+#include "Tools/Traits.hpp"
 #include<vector>
 #include<memory>
 #include<future>
@@ -65,9 +66,13 @@ class ThreadPool
                                           typename Cfg::Statistics> Worker;
 
     typedef std::unique_ptr<Worker> WorkerPtr;
-    std::vector<WorkerPtr> workers;
+    typedef std::vector<WorkerPtr> Team;
+    Team workers;
 
-    typename Cfg::template WorkerCondition<decltype(workers)> workerCondition;
+    typedef typename TaskQueue::Cfg::WorkloadMapCondition WorkloadMapCondition;
+    typename detail::WorkerStat<WorkloadMapCondition, Team,
+                                sizeof(detail::WithWorkerStatInside<WorkloadMapCondition, Team>(0))
+                                == sizeof(One)>::Type workerCondition;
 
     template<class F, typename... Args>
     void applyOnWorkers(F, Args &&...);
@@ -98,5 +103,6 @@ class ThreadPool
     void showStatistics(std::ostream &s)
     { applyOnWorkers(&Worker::showStatistics, s); }
 };
+
 }
 #include "detail/ThreadPool.tcc"

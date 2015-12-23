@@ -1,13 +1,14 @@
 #pragma once
 
+#include "../../EasyTraits/EasyTraits.hpp"
+#include "../../LockFree/Queues/FewToLot2.hpp"
+#include "../detail/Worker.hpp"
+#include "../detail/Manager.hpp"
 #include "CfgComponents.hpp"
-#include "../EasyTraits/EasyTraits.hpp"
-#include "detail/Statistics.hpp"
-#include "../LockFree/Queues/FewToLot2.hpp"
+#include "SimpleStatistics.hpp"
 #include "ShutdownStrategies.hpp"
-#include "detail/Worker.hpp"
-#include "detail/Manager.hpp"
-#include "WorkerCondition.hpp"
+#include "LookupForWorkerStat.hpp"
+#include "WorkerNotBusy.hpp"
 
 namespace TricksAndThings
 {
@@ -20,23 +21,25 @@ template<typename T>
 using DefaultThreadPoolQueue =
     Lfq::FewToLot2Preconfigured<T, Lfq::FewToLot2Traits
                                     <
-                                        Lfq::UseQueuePolicy<Lfq::InfoCallsAre, Template2Type<Lfq::WithInfoCalls>>,
+                                        Lfq::UseQueuePolicy<Lfq::WithInfoCalls, Int2Type<true>>,
+                                        Lfq::UseQueuePolicy<Lfq::ExitedConsumersMapIs, NullType>,
                                         Lfq::UseQueuePolicy<Lfq::WorkloadMapConditionIs,
-                                                            LookupForWorkerCondition<LockFree::ContainerIsNearEmpty<0>>>
+                                                            LookupForWorkerStat<WorkerNotBusy,
+                                                                                LockFree::ContainerIsNearEmpty<0>>>
                                     >>;
 } // <-- namespace detail
 
 typedef DefaultSettingsBox
     <
-        StatisticsAre<detail::NullStatistics>,
+        StatisticsAre<NullType>,
         QueueIs<Template2Type<detail::DefaultThreadPoolQueue>>,
         ShutdownPolicyIs<Int2Type<gracefulShutdown>>,
         WorkerIs<Template2Type<detail::Worker>>,
-        ManagerIs<Template2Type<detail::Manager>>,
-        WorkerConditionIs<Template2Type<WorkerNotBusy>>
+        ManagerIs<Template2Type<detail::Manager>>
     > ThreadPoolDefaultSettings;
 
 struct ThreadPoolDomain {};
+
 template<class... Params>
 using ThreadPoolTraits =
     EasyTraits<ThreadPoolDefaultSettings, ThreadPoolDomain, Params...>;

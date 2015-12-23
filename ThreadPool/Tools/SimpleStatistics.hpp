@@ -2,17 +2,8 @@
 
 #include<iterator>
 
-namespace TricksAndThings { namespace detail {
-
-struct NullStatistics
+namespace TricksAndThings
 {
-    template<class Queue> void store(Queue &){}
-    void clear(){}
-    void stopped(){}
-};
-
-inline static std::ostream &operator<<(std::ostream &s, const NullStatistics &)
-{ return s; }
 
 class SimpleStatistics
 {
@@ -34,5 +25,5 @@ class SimpleStatistics
     void stopped()      { ++ data[stops]; }
 };
 
-} }
-#include "Statistics.tcc"
+}
+#include "SimpleStatistics.tcc"

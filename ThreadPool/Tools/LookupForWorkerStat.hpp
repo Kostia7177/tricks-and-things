@@ -1,32 +1,32 @@
 #pragma once
 
 #include<cstddef>
-#include "../LockFree/Queues/Tools/ConsumerConditionIfc.hpp"
+#include "../../LockFree/Queues/Tools/ConsumerConditionIfc.hpp"
 
 namespace TricksAndThings
 {
 
-template<class PreCondition>
-class LookupForWorkerCondition
+template<template<class> class Condition, class PreCondition>
+class LookupForWorkerStat
 {
     ConsumerConditionIfc *condition;
     PreCondition preCondition;
 
     public:
 
-    LookupForWorkerCondition()
+    LookupForWorkerStat()
         : condition(0),
           checkRange(this){}
 
     template<typename... Args>
-    LookupForWorkerCondition(
+    LookupForWorkerStat(
         ConsumerConditionIfc *p,
         Args &&... args)
         : condition(p),
           preCondition(std::forward<Args>(args)...),
           checkRange(this){}
 
-    LookupForWorkerCondition &operator=(const LookupForWorkerCondition &arg)
+    LookupForWorkerStat &operator=(const LookupForWorkerStat &arg)
     {
         condition = arg.condition;
         preCondition = arg.preCondition;
@@ -41,34 +41,19 @@ class LookupForWorkerCondition
 
     class RangeChecker
     {
-        LookupForWorkerCondition *holder;
+        LookupForWorkerStat *holder;
 
         public:
 
-        RangeChecker(LookupForWorkerCondition *p)
+        RangeChecker(LookupForWorkerStat *p)
             : holder(p){}
 
         bool operator()(size_t idx) const
         { return holder->condition->checkRange(idx); }
     } checkRange;
-};
 
-template<class Team>
-class WorkerNotBusy
-    : public ConsumerConditionIfc
-{
-    Team &workers;
-
-    public:
-
-    WorkerNotBusy(Team &t)
-        : workers(t){}
-
-    bool check(size_t idx)
-    { return !workers[idx]->busy(); }
-
-    bool checkRange(size_t idx)
-    { return idx < workers.size(); }
+    template<class W>
+    using WorkerStat = Condition<W>;
 };
 
 }
