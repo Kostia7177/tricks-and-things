@@ -20,11 +20,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../detail/UsefulDefs.hpp"
+#include "../../detail/UsefulDefs.hpp"
 #include<memory>
 #include<thread>
 
-namespace TricksAndThings { namespace LockFree { namespace Queues
+namespace TricksAndThings { namespace LockFree
+{
+namespace detail
+{
+
+namespace Lfq = TricksAndThings::LockFree::Queues;
+
+} // <-- namespace detail
+namespace Queues
 {
 
 template<class Subqueue>
@@ -200,4 +208,4 @@ class WithParallelConsumers
 };
 
 } } }
-#include "detail/WithParallelConsumers.tcc"
+#include "../detail/WithParallelConsumers.tcc"

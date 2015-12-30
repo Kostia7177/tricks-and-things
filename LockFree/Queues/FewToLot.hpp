@@ -22,7 +22,7 @@
 
 #include "../detail/UsefulDefs.hpp"
 #include "../Tools/ObjHolder.hpp"
-#include "WithParallelConsumers.hpp"
+#include "Tools/WithParallelConsumers.hpp"
 #include "detail/SubqueueBase.hpp"
 #include "detail/Entry.hpp"
 #include "detail/ThreadSafeClientHub.hpp"
@@ -97,31 +97,34 @@ class FewToSingle
     typedef ThreadSafeClientHub ClientHub;
 };
 
+template<typename T, class... Params>
+struct FewToLotWrapper
+{
+    typedef Lfq::WithParallelConsumers<FewToSingle<T, Lfq::QueueTraits<Params...>>> Type;
+};
+
+template<typename T, class... Params>
+struct FewToLot1Wrapper
+{
+    typedef Lfq::WithParallelConsumers<FewToSingle<T,
+                                                   Lfq::QueueTraits
+                                                       <
+                                                        Lfq::UseQueuePolicy<Lfq::WithSubInfoCalls, Int2Type<true>>,
+                                                        Lfq::UseQueuePolicy<Lfq::WithPushWayBalancer, Int2Type<true>>,
+                                                        Params...
+                                                       >>> Type;
+};
+
 } // <-- namespace detail
 
 namespace Queues
 {
 
-template<class... Params>
-using FewToLot1Traits =
-    QueueTraits
-        <
-            UseQueuePolicy<WithSubInfoCalls, Int2Type<true>>,
-            UseQueuePolicy<WithPushWayBalancer, Int2Type<true>>,
-            Params...
-        >;
+template<typename... Params>
+using FewToLot = typename detail::FewToLotWrapper<Params...>::Type;
 
-template<typename T, class... Params>
-using FewToLot =
-    WithParallelConsumers<detail::FewToSingle<T, QueueTraits<Params...>>>;
-
-template<typename T, class Cfg>
-using FewToLotPreconfigured =
-    WithParallelConsumers<detail::FewToSingle<T, Cfg>>;
-
-template<typename T, class... Params>
-using FewToLot1 =
-    WithParallelConsumers<detail::FewToSingle<T, FewToLot1Traits<Params...>>>;
+template<typename... Params>
+using FewToLot1 = typename detail::FewToLot1Wrapper<Params...>::Type;
 
 }
 

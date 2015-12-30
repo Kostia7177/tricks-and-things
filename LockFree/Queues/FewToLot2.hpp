@@ -20,10 +20,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "WithParallelConsumers.hpp"
 #include "GeneralPurpose.hpp"
 #include "detail/SubqueueBase.hpp"
 #include "detail/ThreadSafeClientHub.hpp"
+#include "Tools/WithParallelConsumers.hpp"
 #include "Tools/Traits.hpp"
 
 namespace TricksAndThings { namespace LockFree
@@ -65,28 +65,27 @@ class FewToLot2Subqueue
     typedef ThreadSafeClientHub ClientHub;
 };
 
+template<typename T, class... Params>
+struct FewToLot2Wrapper
+{   // we cannot declare an alias for FewToLot2 directly,
+    // see http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#1430
+    typedef Lfq::WithParallelConsumers<FewToLot2Subqueue<T ,
+                                                         Lfq::QueueTraits
+                                                             <
+                                                                Lfq::UseQueuePolicy<Lfq::WithSubInfoCalls, Int2Type<true>>,
+                                                                Lfq::UseQueuePolicy<Lfq::WithPopWayBalancer, Int2Type<true>>,
+                                                                Lfq::UseQueuePolicy<Lfq::WithPushWayBalancer, Int2Type<true>>,
+                                                                Params...
+                                                             >>> Type;
+};
+
 } // <-- namespace detail
 
 namespace Queues
 {
 
-template<class... Params>
-using FewToLot2Traits =
-    QueueTraits
-        <
-            UseQueuePolicy<WithSubInfoCalls, Int2Type<true>>,
-            UseQueuePolicy<WithPopWayBalancer, Int2Type<true>>,
-            UseQueuePolicy<WithPushWayBalancer, Int2Type<true>>,
-            Params...
-        >;
-
-template<typename T, class... Params>
-using FewToLot2 =
-    WithParallelConsumers<detail::FewToLot2Subqueue<T, FewToLot2Traits<Params...>>>;
-
-template<typename T, class Cfg>
-using FewToLot2Preconfigured =
-    WithParallelConsumers<detail::FewToLot2Subqueue<T, Cfg>>;
+template<typename... Params>
+using FewToLot2 = typename detail::FewToLot2Wrapper<Params...>::Type;
 
 }
 

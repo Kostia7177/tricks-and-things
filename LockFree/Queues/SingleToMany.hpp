@@ -21,8 +21,8 @@
 */
 
 #include "../detail/UsefulDefs.hpp"
-#include "WithParallelConsumers.hpp"
 #include "detail/SubqueueBase.hpp"
+#include "Tools/WithParallelConsumers.hpp"
 #include "Tools/Traits.hpp"
 
 namespace TricksAndThings { namespace LockFree
@@ -103,12 +103,18 @@ class SingleToSingle
         void onProviderExited()     { hasProvider.clear(); }
     };
 };
+template<typename T, class... Params>
+struct SingleToManyWrapper
+{
+    typedef Lfq::WithParallelConsumers<SingleToSingle<T, Lfq::QueueTraits<Params...>>> Type;
+};
 
 } // <-- namespace detail
 
 namespace Queues
 {
-template<typename T, class Cfg = QueueTraits<>> using SingleToMany = WithParallelConsumers<detail::SingleToSingle<T, Cfg>>;
+template<typename... Params>
+using SingleToMany = typename detail::SingleToManyWrapper<Params...>::Type;
 }
 
 } }
