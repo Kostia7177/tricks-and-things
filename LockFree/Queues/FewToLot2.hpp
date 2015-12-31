@@ -23,7 +23,7 @@
 #include "GeneralPurpose.hpp"
 #include "detail/SubqueueBase.hpp"
 #include "detail/ThreadSafeClientHub.hpp"
-#include "Tools/WithParallelConsumers.hpp"
+#include "Tools/RequestDmx.hpp"
 #include "Tools/Traits.hpp"
 
 namespace TricksAndThings { namespace LockFree
@@ -68,15 +68,15 @@ class FewToLot2Subqueue
 template<typename T, class... Params>
 struct FewToLot2Wrapper
 {   // we cannot declare an alias for FewToLot2 directly,
-    // see http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#1430
-    typedef Lfq::WithParallelConsumers<FewToLot2Subqueue<T ,
-                                                         Lfq::QueueTraits
-                                                             <
-                                                                Lfq::UseQueuePolicy<Lfq::WithSubInfoCalls, Int2Type<true>>,
-                                                                Lfq::UseQueuePolicy<Lfq::WithPopWayBalancer, Int2Type<true>>,
-                                                                Lfq::UseQueuePolicy<Lfq::WithPushWayBalancer, Int2Type<true>>,
-                                                                Params...
-                                                             >>> Type;
+    // see http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#1430 ;
+    typedef Lfq::RequestDmx<FewToLot2Subqueue<T,
+                                              Lfq::QueueTraits
+                                                <
+                                                    Lfq::UseQueuePolicy<Lfq::WithSubInfoCalls, Int2Type<true>>,
+                                                    Lfq::UseQueuePolicy<Lfq::WithPopWayBalancer, Int2Type<true>>,
+                                                    Lfq::UseQueuePolicy<Lfq::WithPushWayBalancer, Int2Type<true>>,
+                                                    Params...
+                                                >>> Type;
 };
 
 } // <-- namespace detail

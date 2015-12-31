@@ -22,7 +22,7 @@
 
 #include "../detail/UsefulDefs.hpp"
 #include "../Tools/ObjHolder.hpp"
-#include "Tools/WithParallelConsumers.hpp"
+#include "Tools/RequestDmx.hpp"
 #include "detail/SubqueueBase.hpp"
 #include "detail/Entry.hpp"
 #include "detail/ThreadSafeClientHub.hpp"
@@ -99,20 +99,21 @@ class FewToSingle
 
 template<typename T, class... Params>
 struct FewToLotWrapper
-{
-    typedef Lfq::WithParallelConsumers<FewToSingle<T, Lfq::QueueTraits<Params...>>> Type;
+{   // (*) we cannot declare an alias of FewToLot directly,
+    // see http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#1430 ;
+    typedef Lfq::RequestDmx<FewToSingle<T, Lfq::QueueTraits<Params...>>> Type;
 };
 
 template<typename T, class... Params>
 struct FewToLot1Wrapper
-{
-    typedef Lfq::WithParallelConsumers<FewToSingle<T,
-                                                   Lfq::QueueTraits
-                                                       <
-                                                        Lfq::UseQueuePolicy<Lfq::WithSubInfoCalls, Int2Type<true>>,
-                                                        Lfq::UseQueuePolicy<Lfq::WithPushWayBalancer, Int2Type<true>>,
-                                                        Params...
-                                                       >>> Type;
+{   // see (*);
+    typedef Lfq::RequestDmx<FewToSingle<T,
+                                        Lfq::QueueTraits
+                                            <
+                                                Lfq::UseQueuePolicy<Lfq::WithSubInfoCalls, Int2Type<true>>,
+                                                Lfq::UseQueuePolicy<Lfq::WithPushWayBalancer, Int2Type<true>>,
+                                                Params...
+                                            >>> Type;
 };
 
 } // <-- namespace detail

@@ -26,7 +26,7 @@ namespace TricksAndThings { namespace LockFree { namespace Queues
 {
 
 template<class Subqueue>
-Subqueue *WithParallelConsumers<Subqueue>::Itself::selectSubqueue(size_t *idxRet)
+Subqueue *RequestDmx<Subqueue>::Itself::selectSubqueue(size_t *idxRet)
 {
     if (!numOfConsumers) { return 0; }
 
@@ -46,7 +46,7 @@ Subqueue *WithParallelConsumers<Subqueue>::Itself::selectSubqueue(size_t *idxRet
 }
 
 template<class Subqueue>
-Subqueue *WithParallelConsumers<Subqueue>::Itself::getSubqueue()
+Subqueue *RequestDmx<Subqueue>::Itself::getSubqueue()
 {
     size_t idx;
     if (exitedConsumersMap.eject(&idx))
@@ -69,7 +69,7 @@ Subqueue *WithParallelConsumers<Subqueue>::Itself::getSubqueue()
 
 template<class Subqueue>
 template<typename... Args>
-WithParallelConsumers<Subqueue>::Itself::Itself(
+RequestDmx<Subqueue>::Itself::Itself(
     size_t n,
     Args &&... args)
     : numOfSubqueues(sizeof(subqueues)),
@@ -90,14 +90,14 @@ WithParallelConsumers<Subqueue>::Itself::Itself(
 }
 
 template<class Subqueue>
-WithParallelConsumers<Subqueue> &WithParallelConsumers<Subqueue>::operator=(WithParallelConsumers &&p)
+RequestDmx<Subqueue> &RequestDmx<Subqueue>::operator=(RequestDmx &&p)
 {
     itself = std::move(p.itself);
     return *this;
 }
 
 template<class Subqueue>
-WithParallelConsumers<Subqueue>::ConsumerSideProxy::ConsumerSideProxy(WithParallelConsumers *q)
+RequestDmx<Subqueue>::ConsumerSideProxy::ConsumerSideProxy(RequestDmx *q)
     : queue(q->itself),
       threadId(std::this_thread::get_id())
 {
@@ -113,7 +113,7 @@ WithParallelConsumers<Subqueue>::ConsumerSideProxy::ConsumerSideProxy(WithParall
 }
 
 template<class Subqueue>
-WithParallelConsumers<Subqueue>::ConsumerSideProxy::~ConsumerSideProxy()
+RequestDmx<Subqueue>::ConsumerSideProxy::~ConsumerSideProxy()
 {
     -- queue->numOfConsumers;
     queue->workloadMap.erase(subqueueIdx);
@@ -121,7 +121,7 @@ WithParallelConsumers<Subqueue>::ConsumerSideProxy::~ConsumerSideProxy()
 }
 
 template<class Subqueue>
-bool WithParallelConsumers<Subqueue>::ConsumerSideProxy::pop(Type &p)
+bool RequestDmx<Subqueue>::ConsumerSideProxy::pop(Type &p)
 {
     std::thread::id caller = std::this_thread::get_id();
     if (threadId != caller)
@@ -145,7 +145,7 @@ bool WithParallelConsumers<Subqueue>::ConsumerSideProxy::pop(Type &p)
 }
 
 template<class Subqueue>
-WithParallelConsumers<Subqueue>::ProviderSideProxy::ProviderSideProxy(WithParallelConsumers *q)
+RequestDmx<Subqueue>::ProviderSideProxy::ProviderSideProxy(RequestDmx *q)
     : queue(q->itself),
       idx(0)
 {
@@ -160,7 +160,7 @@ WithParallelConsumers<Subqueue>::ProviderSideProxy::ProviderSideProxy(WithParall
 }
 
 template<class Subqueue>
-void WithParallelConsumers<Subqueue>::ProviderSideProxy::push(Type &&p)
+void RequestDmx<Subqueue>::ProviderSideProxy::push(Type &&p)
 {
     if (Subqueue *subqueue = queue->selectSubqueue(&idx))
     {

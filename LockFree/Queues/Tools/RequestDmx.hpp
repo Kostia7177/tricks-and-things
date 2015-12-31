@@ -32,15 +32,17 @@ namespace detail
 namespace Lfq = TricksAndThings::LockFree::Queues;
 
 } // <-- namespace detail
+
 namespace Queues
 {
 
 template<class Subqueue>
-class WithParallelConsumers
-{   // wrapper for a pack of sub-queues, each of wich is
-    // dedicated to it's consumer;
-    // holds (and hides) this pack and multiplexes input
-    // requests ('push') calls between the sub-queues;
+class RequestDmx    // request demultiplexer
+{   // thing that's looking like a single queue, but in fact
+    // is a wrapper for a pack of sub-queues, each of wich
+    // is dedicated to it's consumer;
+    // holds (and hides) this pack and demultiplexes input
+    // requests ('push' calls) between the sub-queues;
     public:
     typedef typename Subqueue::Cfg Cfg;
     private:
@@ -152,17 +154,17 @@ class WithParallelConsumers
 
     public:
 
-    WithParallelConsumers() : itself(new Itself(0)){}
+    RequestDmx() : itself(new Itself(0)){}
 
     template<typename... Args>
-    WithParallelConsumers(size_t s, Args &&... args)
+    RequestDmx(size_t s, Args &&... args)
         : itself(new Itself(s, std::forward<Args>(args)...)){}
 
-    WithParallelConsumers(const WithParallelConsumers &) = delete;
-    WithParallelConsumers(WithParallelConsumers &&q) : itself(std::move(q)){}
+    RequestDmx(const RequestDmx &) = delete;
+    RequestDmx(RequestDmx &&q) : itself(std::move(q)){}
 
-    WithParallelConsumers &operator=(WithParallelConsumers &&);
-    WithParallelConsumers &operator=(const WithParallelConsumers &) = delete;
+    RequestDmx &operator=(RequestDmx &&);
+    RequestDmx &operator=(const RequestDmx &) = delete;
 
     size_t size() const { return itself->size(); }
 
@@ -185,7 +187,7 @@ class WithParallelConsumers
         size_t subqueueIdx;
         std::thread::id threadId;
         public:
-        ConsumerSideProxy(WithParallelConsumers *);
+        ConsumerSideProxy(RequestDmx *);
         ~ConsumerSideProxy();
         ConsumerSideProxy *operator->() { return this; }
         size_t subSize() const          { return subqueue->size(); }
@@ -197,7 +199,7 @@ class WithParallelConsumers
         QueuePtr queue;
         size_t idx;
         public:
-        ProviderSideProxy(WithParallelConsumers *);
+        ProviderSideProxy(RequestDmx *);
         ~ProviderSideProxy()
         { queue->clientHub.onProviderExited(); }
         ProviderSideProxy *operator->() { return this; }
@@ -208,4 +210,4 @@ class WithParallelConsumers
 };
 
 } } }
-#include "../detail/WithParallelConsumers.tcc"
+#include "../detail/RequestDmx.tcc"

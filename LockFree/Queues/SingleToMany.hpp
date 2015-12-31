@@ -22,7 +22,7 @@
 
 #include "../detail/UsefulDefs.hpp"
 #include "detail/SubqueueBase.hpp"
-#include "Tools/WithParallelConsumers.hpp"
+#include "Tools/RequestDmx.hpp"
 #include "Tools/Traits.hpp"
 
 namespace TricksAndThings { namespace LockFree
@@ -103,18 +103,22 @@ class SingleToSingle
         void onProviderExited()     { hasProvider.clear(); }
     };
 };
+
 template<typename T, class... Params>
 struct SingleToManyWrapper
-{
-    typedef Lfq::WithParallelConsumers<SingleToSingle<T, Lfq::QueueTraits<Params...>>> Type;
+{   // we cannot declare an alias of SingleToMany directly,
+    // see http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#1430 ;
+    typedef Lfq::RequestDmx<SingleToSingle<T, Lfq::QueueTraits<Params...>>> Type;
 };
 
 } // <-- namespace detail
 
 namespace Queues
 {
+
 template<typename... Params>
 using SingleToMany = typename detail::SingleToManyWrapper<Params...>::Type;
+
 }
 
 } }
